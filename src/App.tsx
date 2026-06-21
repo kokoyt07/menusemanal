@@ -1,51 +1,60 @@
 import { useState, useEffect } from 'react'
 import type { Tab } from './types'
 import { seedIfNeeded } from './utils/seeder'
+import WelcomeScreen from './views/WelcomeScreen'
 import WeeklyMenuView from './views/WeeklyMenuView'
 import DayMenuView from './views/DayMenuView'
 import DishesView from './views/DishesView'
 import HistoryView, { HistoryDetailView } from './views/HistoryView'
 
 type Screen =
+  | { type: 'welcome' }
   | { type: 'main' }
   | { type: 'dayMenu'; date: string; weekStart: string }
   | { type: 'historyDetail'; menuId: string }
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>('menu')
-  const [screen, setScreen] = useState<Screen>({ type: 'main' })
+  const [tab, setTab]       = useState<Tab>('menu')
+  const [screen, setScreen] = useState<Screen>({ type: 'welcome' })
 
   useEffect(() => { seedIfNeeded() }, [])
 
-  function goBack() {
-    setScreen({ type: 'main' })
+  function goBack() { setScreen({ type: 'main' }) }
+
+  if (screen.type === 'welcome') {
+    return <WelcomeScreen onEnter={() => setScreen({ type: 'main' })} />
   }
 
   return (
     <div className="flex flex-col h-full bg-gray-50 font-sans">
       {/* ── Main tab view ── */}
       <div className={screen.type === 'main' ? 'flex flex-col h-full' : 'hidden'}>
-        {/* Page title bar */}
-        <div className="bg-white border-b border-gray-100 px-4 pt-safe flex-shrink-0">
+        {/* Title bar */}
+        <div className="bg-white border-b border-gray-100 px-4 pt-safe flex-shrink-0 flex items-center justify-between">
           <h1 className="text-lg font-bold text-gray-900 py-3">
-            {tab === 'menu' && 'Menú Semanal'}
-            {tab === 'platos' && 'Mis Platos'}
+            {tab === 'menu'      && 'Menú Semanal'}
+            {tab === 'platos'    && 'Mis Platos'}
             {tab === 'historial' && 'Historial'}
           </h1>
+          {/* TuCocinaApp mini branding */}
+          <button
+            onClick={() => setScreen({ type: 'welcome' })}
+            className="text-xs text-gray-300 font-semibold tracking-wide active:text-gray-400"
+          >
+            TUCOCINAPP
+          </button>
         </div>
 
-        {/* Content — flex-col so children can use flex:1 to fill space */}
+        {/* Content */}
         <div className="flex-1 overflow-hidden flex flex-col">
           {tab === 'menu' && (
             <WeeklyMenuView
               onDayTap={(date, weekStart) => setScreen({ type: 'dayMenu', date, weekStart })}
             />
           )}
-          {tab === 'platos' && <DishesView />}
+          {tab === 'platos'    && <DishesView />}
           {tab === 'historial' && (
-            <HistoryView
-              onMenuOpen={menuId => setScreen({ type: 'historyDetail', menuId })}
-            />
+            <HistoryView onMenuOpen={menuId => setScreen({ type: 'historyDetail', menuId })} />
           )}
         </div>
 
@@ -76,19 +85,12 @@ export default function App() {
 
       {/* ── Day menu screen ── */}
       {screen.type === 'dayMenu' && (
-        <DayMenuView
-          date={screen.date}
-          weekStart={screen.weekStart}
-          onBack={goBack}
-        />
+        <DayMenuView date={screen.date} weekStart={screen.weekStart} onBack={goBack} />
       )}
 
       {/* ── History detail screen ── */}
       {screen.type === 'historyDetail' && (
-        <HistoryDetailView
-          menuId={screen.menuId}
-          onBack={goBack}
-        />
+        <HistoryDetailView menuId={screen.menuId} onBack={goBack} />
       )}
     </div>
   )
