@@ -17,9 +17,6 @@ export default function App() {
 
   useEffect(() => { seedIfNeeded() }, [])
 
-  // Keep WeeklyMenuView state alive when navigating away
-  const [weekMenuKey, setWeekMenuKey] = useState(0)
-
   function goBack() {
     setScreen({ type: 'main' })
   }
@@ -37,8 +34,8 @@ export default function App() {
           </h1>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-hidden">
+        {/* Content — flex-col so children can use flex:1 to fill space */}
+        <div className="flex-1 overflow-hidden flex flex-col">
           {tab === 'menu' && (
             <WeeklyMenuView
               onDayTap={(date, weekStart) => setScreen({ type: 'dayMenu', date, weekStart })}

@@ -30,9 +30,9 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
   const dishMap = new Map<string, Dish>((dishes ?? []).map(d => [d.id, d]))
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col flex-1 min-h-0 bg-gray-50">
       {/* Week navigator */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 flex-shrink-0">
         <button
           onClick={() => setWeekStart(w => addWeeks(w, -1))}
           className="w-10 h-10 flex items-center justify-center rounded-full active:bg-gray-100 text-blue-600 text-xl font-semibold"

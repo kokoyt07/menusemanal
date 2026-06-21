@@ -19,25 +19,32 @@ html, body, #root {
 
 body {
   overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
 }
 
-/* Safe area helpers */
-.pt-safe  { padding-top:    env(safe-area-inset-top,    0px); }
-.pb-safe  { padding-bottom: env(safe-area-inset-bottom, 0px); }
-.mb-safe  { margin-bottom:  env(safe-area-inset-bottom, 0px); }
+/* Prevent iOS zoom on focus (requires font-size >= 16px on inputs) */
+input, textarea, select {
+  font-size: 16px !important;
+}
 
-/* Tab bar: 64px high + safe-area */
-.tab-bar-height { height: calc(64px + env(safe-area-inset-bottom, 0px)); }
+/* Safe area padding helpers */
+.pt-safe { padding-top:    env(safe-area-inset-top,    0px); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
-/* Content area leaves room for tab bar */
+/* Generic scrollable flex child — fills remaining space in a flex column */
 .content-area {
-  height: calc(100dvh - 64px - env(safe-area-inset-bottom, 0px));
+  flex: 1;
+  min-height: 0;          /* critical: lets flex child shrink below its content height */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Slide-in screens take full height */
+/* Tab bar: fixed height + iPhone home bar */
+.tab-bar-height {
+  flex-shrink: 0;
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Full-screen overlay screens (DayMenuView, HistoryDetail) */
 .screen-full {
   position: fixed;
   inset: 0;
@@ -49,22 +56,25 @@ body {
   overflow: hidden;
 }
 
+/* Scrollable body inside a screen-full */
 .screen-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Bottom sheet modal */
+/* Bottom sheet overlay */
 .sheet-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.45);
   z-index: 40;
   display: flex;
   align-items: flex-end;
 }
 
+/* Bottom sheet panel */
 .sheet-content {
   width: 100%;
   background: white;
@@ -75,14 +85,15 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Scrollable list inside sheet */
+/* Scrollable list inside a sheet */
 .sheet-list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Chip / badge */
+/* Category / filter badge */
 .chip {
   @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
 }

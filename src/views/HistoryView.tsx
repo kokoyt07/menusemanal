@@ -15,11 +15,11 @@ export default function HistoryView({ onMenuOpen }: Props) {
     db.menus.orderBy('weekStartDate').reverse().toArray()
   )
 
-  if (!menus) return <div className="flex-1 flex items-center justify-center"><p className="text-gray-400">Cargando…</p></div>
+  if (!menus) return <div className="flex-1 flex items-center justify-center min-h-0"><p className="text-gray-400">Cargando…</p></div>
 
   if (menus.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-400 px-8 text-center">
+      <div className="flex flex-col items-center justify-center flex-1 min-h-0 text-gray-400 px-8 text-center">
         <p className="text-5xl mb-4">📅</p>
         <p className="font-medium text-gray-600 mb-1">Sin historial</p>
         <p className="text-sm">Los menús que planifiques aparecerán aquí</p>

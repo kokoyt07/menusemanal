@@ -27,9 +27,9 @@ export default function DishesView() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col flex-1 min-h-0 bg-gray-50">
       {/* Search bar */}
-      <div className="px-4 pt-3 pb-2 bg-white border-b border-gray-100 space-y-2">
+      <div className="px-4 pt-3 pb-2 bg-white border-b border-gray-100 space-y-2 flex-shrink-0">
         <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2">
           <span className="text-gray-400 text-sm">🔍</span>
           <input
