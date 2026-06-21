@@ -6,6 +6,7 @@ import { currentWeekStart, addWeeks, weekDates, isCurrentWeek, weekRangeLabel,
          dayNameShort, dayNumber, isToday, fullDayTitle } from '../utils/dateUtils'
 import { hasConflict, getUsedCategoryIds } from '../utils/validationUtils'
 import { getDishIdsFromDay } from '../types'
+import { autoFillWeek } from '../utils/autoFill'
 
 interface Props {
   onDayTap: (date: string, weekStart: string) => void
@@ -13,6 +14,19 @@ interface Props {
 
 export default function WeeklyMenuView({ onDayTap }: Props) {
   const [weekStart, setWeekStart] = useState(currentWeekStart)
+  const [filling, setFilling] = useState(false)
+
+  async function handleAutoFill() {
+    if (!confirm('¿Rellenar la semana automáticamente? Solo se rellenarán los huecos vacíos.')) return
+    setFilling(true)
+    try {
+      await autoFillWeek(weekStart)
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Error al rellenar')
+    } finally {
+      setFilling(false)
+    }
+  }
 
   const dates = weekDates(weekStart)
 
@@ -52,6 +66,21 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
           onClick={() => setWeekStart(w => addWeeks(w, 1))}
           className="w-10 h-10 flex items-center justify-center rounded-full active:bg-gray-100 text-blue-600 text-xl font-semibold"
         >›</button>
+      </div>
+
+      {/* Auto-fill bar */}
+      <div className="px-4 py-2 bg-white border-b border-gray-100 flex-shrink-0">
+        <button
+          onClick={handleAutoFill}
+          disabled={filling}
+          className="w-full py-2 rounded-xl bg-blue-50 text-blue-600 text-sm font-medium active:bg-blue-100 disabled:opacity-50 flex items-center justify-center gap-1.5"
+        >
+          {filling ? (
+            <span className="animate-pulse">Rellenando…</span>
+          ) : (
+            <><span>⚡</span><span>Rellenar semana automáticamente</span></>
+          )}
+        </button>
       </div>
 
       {/* Day cards */}
