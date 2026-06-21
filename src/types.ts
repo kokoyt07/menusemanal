@@ -1,6 +1,6 @@
 export type CourseType = 'primero' | 'segundo' | 'unico'
 export type MealMode  = 'primeroYSegundo' | 'platoUnico'
-export type Tab       = 'menu' | 'platos' | 'historial'
+export type Tab       = 'menu' | 'platos' | 'lista' | 'historial'
 
 export interface DishCategory {
   id: string
@@ -37,6 +37,7 @@ export interface MenuDay {
   firstDinnerDishId?:  string
   secondDinnerDishId?: string
   singleDinnerDishId?: string
+  notes?: string
 }
 
 export type DishSlot =

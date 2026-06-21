@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import type { Tab } from './types'
 import { seedIfNeeded } from './utils/seeder'
+import ToastContainer from './components/ToastContainer'
 import WelcomeScreen from './views/WelcomeScreen'
 import WeeklyMenuView from './views/WeeklyMenuView'
 import DayMenuView from './views/DayMenuView'
 import DishesView from './views/DishesView'
+import ShoppingListView from './views/ShoppingListView'
 import HistoryView, { HistoryDetailView } from './views/HistoryView'
 
 type Screen =
@@ -22,11 +24,18 @@ export default function App() {
   function goBack() { setScreen({ type: 'main' }) }
 
   if (screen.type === 'welcome') {
-    return <WelcomeScreen onEnter={() => setScreen({ type: 'main' })} />
+    return (
+      <>
+        <WelcomeScreen onEnter={() => setScreen({ type: 'main' })} />
+        <ToastContainer />
+      </>
+    )
   }
 
   return (
     <div className="flex flex-col h-full bg-gray-50 font-sans">
+      <ToastContainer />
+
       {/* ── Main tab view ── */}
       <div className={screen.type === 'main' ? 'flex flex-col h-full' : 'hidden'}>
         {/* Title bar */}
@@ -34,12 +43,12 @@ export default function App() {
           <h1 className="text-lg font-bold text-gray-900 py-3">
             {tab === 'menu'      && 'Menú Semanal'}
             {tab === 'platos'    && 'Mis Platos'}
+            {tab === 'lista'     && 'Lista de la Compra'}
             {tab === 'historial' && 'Historial'}
           </h1>
-          {/* TuCocinaApp mini branding */}
           <button
             onClick={() => setScreen({ type: 'welcome' })}
-            className="text-xs text-gray-300 font-semibold tracking-wide active:text-gray-400"
+            className="text-[10px] text-gray-300 font-bold tracking-widest active:text-gray-400"
           >
             TUCOCINAPP
           </button>
@@ -47,15 +56,10 @@ export default function App() {
 
         {/* Content */}
         <div className="flex-1 overflow-hidden flex flex-col">
-          {tab === 'menu' && (
-            <WeeklyMenuView
-              onDayTap={(date, weekStart) => setScreen({ type: 'dayMenu', date, weekStart })}
-            />
-          )}
+          {tab === 'menu'      && <WeeklyMenuView onDayTap={(date, weekStart) => setScreen({ type: 'dayMenu', date, weekStart })} />}
           {tab === 'platos'    && <DishesView />}
-          {tab === 'historial' && (
-            <HistoryView onMenuOpen={menuId => setScreen({ type: 'historyDetail', menuId })} />
-          )}
+          {tab === 'lista'     && <ShoppingListView />}
+          {tab === 'historial' && <HistoryView onMenuOpen={menuId => setScreen({ type: 'historyDetail', menuId })} />}
         </div>
 
         {/* Tab bar */}
@@ -64,6 +68,7 @@ export default function App() {
             {([
               { id: 'menu',      icon: '📅', label: 'Menú' },
               { id: 'platos',    icon: '🍽',  label: 'Platos' },
+              { id: 'lista',     icon: '🛒',  label: 'Lista' },
               { id: 'historial', icon: '🕐',  label: 'Historial' },
             ] as { id: Tab; icon: string; label: string }[]).map(t => (
               <button

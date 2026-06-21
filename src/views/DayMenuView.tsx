@@ -6,6 +6,7 @@ import { SLOT_FIELD, getDishIdsFromDay } from '../types'
 import { fullDayTitle, weekDates } from '../utils/dateUtils'
 import { hasConflict, getUsedCategoryIds } from '../utils/validationUtils'
 import DishPickerModal from './DishPickerModal'
+import { showToast } from '../utils/toast'
 
 interface Props {
   date: string
@@ -136,6 +137,25 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
           onPickSecond={() => setPickerSlot('secondDinner')}
           onPickSingle={() => setPickerSlot('singleDinner')}
         />
+
+        {/* Notas del día */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-50 flex items-center gap-2">
+            <span className="text-base">📝</span>
+            <span className="font-semibold text-gray-900 text-sm">Notas del día</span>
+          </div>
+          <textarea
+            value={day?.notes ?? ''}
+            onChange={async e => {
+              const d = await ensureDay()
+              await db.days.update(d.id, { notes: e.target.value })
+            }}
+            onBlur={() => showToast('Notas guardadas')}
+            placeholder="Cenar fuera, cumpleaños, comprar pan…"
+            rows={3}
+            className="w-full px-4 py-3 text-sm text-gray-700 placeholder-gray-300 resize-none outline-none"
+          />
+        </div>
 
         <div className="h-4" />
       </div>

@@ -5,6 +5,7 @@ import type { WeeklyMenu, MenuDay, Dish } from '../types'
 import { getDishIdsFromDay } from '../types'
 import { weekRangeLabel, addWeeks, fullDayTitle } from '../utils/dateUtils'
 import { exportAndSharePDF } from '../utils/pdfExporter'
+import { showToast } from '../utils/toast'
 
 interface Props {
   onMenuOpen: (menuId: string) => void
@@ -38,33 +39,31 @@ export default function HistoryView({ onMenuOpen }: Props) {
 }
 
 function HistoryMenuCard({ menu, onOpen }: { menu: WeeklyMenu; onOpen: () => void }) {
-  const days = useLiveQuery(() => db.days.where('menuId').equals(menu.id).toArray(), [menu.id])
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const days   = useLiveQuery(() => db.days.where('menuId').equals(menu.id).toArray(), [menu.id])
   const filled = (days ?? []).filter(d => d.hasLunch || d.hasDinner).length
 
   async function duplicate() {
     const nextStart = addWeeks(menu.weekStartDate, 1)
     const existing = await db.menus.where('weekStartDate').equals(nextStart).first()
-    if (existing) { alert('Ya existe un menú para esa semana'); return }
+    if (existing) { showToast('Ya existe un menú para esa semana', 'info'); return }
 
     const newMenuId = crypto.randomUUID()
     await db.menus.add({ id: newMenuId, weekStartDate: nextStart })
-
-    const src = days ?? []
-    const newDays: MenuDay[] = src.map(d => ({
+    const newDays: MenuDay[] = (days ?? []).map(d => ({
       ...d,
       id: crypto.randomUUID(),
       menuId: newMenuId,
       date: addWeeks(d.date, 1),
     }))
     await db.days.bulkAdd(newDays)
-    alert('Semana duplicada ✓')
+    showToast('Semana duplicada')
   }
 
   async function deleteMenu() {
-    if (!confirm('¿Eliminar este menú y todos sus días?')) return
-    const dayIds = (days ?? []).map(d => d.id)
-    await db.days.bulkDelete(dayIds)
+    await db.days.bulkDelete((days ?? []).map(d => d.id))
     await db.menus.delete(menu.id)
+    showToast('Menú eliminado')
   }
 
   return (
@@ -76,15 +75,26 @@ function HistoryMenuCard({ menu, onOpen }: { menu: WeeklyMenu; onOpen: () => voi
         </div>
         <span className="text-gray-300">›</span>
       </button>
-      <div className="flex border-t border-gray-100">
-        <button onClick={duplicate} className="flex-1 py-2.5 text-xs text-blue-500 font-medium active:bg-gray-50">
-          Duplicar semana →
-        </button>
-        <div className="w-px bg-gray-100" />
-        <button onClick={deleteMenu} className="flex-1 py-2.5 text-xs text-red-400 font-medium active:bg-gray-50">
-          Eliminar
-        </button>
-      </div>
+
+      {confirmDelete ? (
+        <div className="flex items-center justify-between px-4 py-2.5 bg-red-50 border-t border-red-100">
+          <p className="text-xs text-red-700 font-medium">¿Eliminar este menú?</p>
+          <div className="flex gap-2">
+            <button onClick={deleteMenu} className="px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded-lg">Sí</button>
+            <button onClick={() => setConfirmDelete(false)} className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg">No</button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex border-t border-gray-100">
+          <button onClick={duplicate} className="flex-1 py-2.5 text-xs text-blue-500 font-medium active:bg-gray-50">
+            Duplicar semana →
+          </button>
+          <div className="w-px bg-gray-100" />
+          <button onClick={() => setConfirmDelete(true)} className="flex-1 py-2.5 text-xs text-red-400 font-medium active:bg-gray-50">
+            Eliminar
+          </button>
+        </div>
+      )}
     </div>
   )
 }

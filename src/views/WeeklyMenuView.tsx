@@ -7,6 +7,7 @@ import { currentWeekStart, addWeeks, weekDates, isCurrentWeek, weekRangeLabel,
 import { hasConflict, getUsedCategoryIds } from '../utils/validationUtils'
 import { getDishIdsFromDay } from '../types'
 import { autoFillWeek } from '../utils/autoFill'
+import { showToast } from '../utils/toast'
 
 interface Props {
   onDayTap: (date: string, weekStart: string) => void
@@ -17,15 +18,46 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
   const [filling, setFilling] = useState(false)
 
   async function handleAutoFill() {
-    if (!confirm('¿Rellenar la semana automáticamente? Solo se rellenarán los huecos vacíos.')) return
     setFilling(true)
     try {
       await autoFillWeek(weekStart)
+      showToast('Semana rellenada')
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Error al rellenar')
+      showToast(e instanceof Error ? e.message : 'Error al rellenar', 'error')
     } finally {
       setFilling(false)
     }
+  }
+
+  async function handleShare() {
+    const dayList = days ?? []
+    const lines: string[] = [`📅 ${weekRangeLabel(weekStart)}`, '']
+    for (const date of dates) {
+      const day = dayList.find(d => d.date === date)
+      if (!day) continue
+      lines.push(fullDayTitle(date).toUpperCase())
+      if (day.hasLunch) {
+        const ids = day.lunchMode === 'primeroYSegundo'
+          ? [day.firstLunchDishId, day.secondLunchDishId]
+          : [day.singleLunchDishId]
+        const names = ids.filter(Boolean).map(id => dishMap.get(id!)?.name).filter(Boolean).join(' · ') || '—'
+        lines.push(`☀ Comida: ${names}`)
+      }
+      if (day.hasDinner) {
+        const ids = day.dinnerMode === 'primeroYSegundo'
+          ? [day.firstDinnerDishId, day.secondDinnerDishId]
+          : [day.singleDinnerDishId]
+        const names = ids.filter(Boolean).map(id => dishMap.get(id!)?.name).filter(Boolean).join(' · ') || '—'
+        lines.push(`☽ Cena: ${names}`)
+      }
+      if (day.notes) lines.push(`📝 ${day.notes}`)
+      lines.push('')
+    }
+    const text = lines.join('\n').trim()
+    try {
+      if (navigator.share) await navigator.share({ title: 'Menú semanal', text })
+      else { await navigator.clipboard.writeText(text); showToast('Copiado al portapapeles') }
+    } catch { /* user cancelled */ }
   }
 
   const dates = weekDates(weekStart)
@@ -68,18 +100,20 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
         >›</button>
       </div>
 
-      {/* Auto-fill bar */}
-      <div className="px-4 py-2 bg-white border-b border-gray-100 flex-shrink-0">
+      {/* Action bar */}
+      <div className="px-4 py-2 bg-white border-b border-gray-100 flex-shrink-0 flex gap-2">
         <button
           onClick={handleAutoFill}
           disabled={filling}
-          className="w-full py-2 rounded-xl bg-blue-50 text-blue-600 text-sm font-medium active:bg-blue-100 disabled:opacity-50 flex items-center justify-center gap-1.5"
+          className="flex-1 py-2 rounded-xl bg-blue-50 text-blue-600 text-sm font-medium active:bg-blue-100 disabled:opacity-50 flex items-center justify-center gap-1"
         >
-          {filling ? (
-            <span className="animate-pulse">Rellenando…</span>
-          ) : (
-            <><span>⚡</span><span>Rellenar semana automáticamente</span></>
-          )}
+          {filling ? <span className="animate-pulse">Rellenando…</span> : <><span>⚡</span><span>Rellenar</span></>}
+        </button>
+        <button
+          onClick={handleShare}
+          className="py-2 px-4 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium active:bg-gray-200 flex items-center gap-1"
+        >
+          <span>↑</span><span>Compartir</span>
         </button>
       </div>
 

@@ -4,12 +4,14 @@ import db from '../db'
 import type { Dish, CourseType } from '../types'
 import { COURSE_LABEL } from '../types'
 import AddEditDishModal from './AddEditDishModal'
+import { showToast } from '../utils/toast'
 
 export default function DishesView() {
-  const [search, setSearch]           = useState('')
-  const [filterCatId, setFilterCatId] = useState<string | null>(null)
+  const [search, setSearch]             = useState('')
+  const [filterCatId, setFilterCatId]   = useState<string | null>(null)
   const [filterCourse, setFilterCourse] = useState<CourseType | 'todos'>('todos')
-  const [editingDish, setEditingDish] = useState<Dish | null | 'new'>(null)
+  const [editingDish, setEditingDish]   = useState<Dish | null | 'new'>(null)
+  const [confirmId, setConfirmId]       = useState<string | null>(null)
 
   const categories = useLiveQuery(() => db.categories.orderBy('sortOrder').toArray())
   const allDishes  = useLiveQuery(() => db.dishes.orderBy('name').toArray())
@@ -22,8 +24,9 @@ export default function DishesView() {
   })
 
   async function deleteDish(dish: Dish) {
-    if (!confirm(`¿Eliminar "${dish.name}"?`)) return
     await db.dishes.delete(dish.id)
+    setConfirmId(null)
+    showToast(`"${dish.name}" eliminado`)
   }
 
   return (
@@ -83,28 +86,51 @@ export default function DishesView() {
         ) : (
           <ul className="divide-y divide-gray-100 bg-white mx-4 mt-4 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             {filtered.map(dish => (
-              <li key={dish.id} className="flex items-center gap-3 px-4 py-3 active:bg-gray-50">
-                <button onClick={() => setEditingDish(dish)} className="flex-1 min-w-0 text-left">
-                  <p className="text-sm font-medium text-gray-900 truncate">{dish.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-xs text-gray-400">{COURSE_LABEL[dish.course]}</span>
-                    {dish.categoryIds.map(cid => {
-                      const cat = (categories ?? []).find(c => c.id === cid)
-                      return cat ? (
-                        <span key={cid} className="chip bg-blue-50 text-blue-600">{cat.name}</span>
-                      ) : null
-                    })}
+              <li key={dish.id}>
+                {confirmId === dish.id ? (
+                  /* Inline delete confirmation */
+                  <div className="flex items-center justify-between px-4 py-3 bg-red-50">
+                    <p className="text-sm text-red-700 font-medium">¿Eliminar "{dish.name}"?</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => deleteDish(dish)}
+                        className="px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded-lg active:bg-red-600"
+                      >
+                        Sí
+                      </button>
+                      <button
+                        onClick={() => setConfirmId(null)}
+                        className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg active:bg-gray-300"
+                      >
+                        No
+                      </button>
+                    </div>
                   </div>
-                  {dish.notes && (
-                    <p className="text-xs text-gray-400 mt-0.5 truncate">{dish.notes}</p>
-                  )}
-                </button>
-                <button
-                  onClick={() => deleteDish(dish)}
-                  className="flex-shrink-0 w-7 h-7 flex items-center justify-center text-gray-300 active:text-red-400 rounded-full"
-                >
-                  🗑
-                </button>
+                ) : (
+                  <div className="flex items-center gap-3 px-4 py-3 active:bg-gray-50">
+                    <button onClick={() => setEditingDish(dish)} className="flex-1 min-w-0 text-left">
+                      <p className="text-sm font-medium text-gray-900 truncate">{dish.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="text-xs text-gray-400">{COURSE_LABEL[dish.course]}</span>
+                        {dish.categoryIds.map(cid => {
+                          const cat = (categories ?? []).find(c => c.id === cid)
+                          return cat ? (
+                            <span key={cid} className="chip bg-blue-50 text-blue-600">{cat.name}</span>
+                          ) : null
+                        })}
+                      </div>
+                      {dish.notes && (
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">{dish.notes}</p>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setConfirmId(dish.id)}
+                      className="flex-shrink-0 w-7 h-7 flex items-center justify-center text-gray-300 active:text-red-400 rounded-full"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -115,7 +141,7 @@ export default function DishesView() {
       {/* FAB */}
       <button
         onClick={() => setEditingDish('new')}
-        className="fixed right-5 bottom-[80px] w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg
+        className="fixed right-5 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg
           flex items-center justify-center text-2xl active:bg-blue-600 transition-colors z-10"
         style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
       >
