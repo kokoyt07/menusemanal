@@ -5,6 +5,7 @@ import { showToast } from '../utils/toast'
 import { isDarkMode, applyDarkMode } from '../utils/theme'
 import { LogOut, Download, Upload, Trash, ChevronRight, Moon } from '../components/Icon'
 import PrivacyPolicySheet from './PrivacyPolicySheet'
+import TermsOfServiceSheet from './TermsOfServiceSheet'
 
 declare const __APP_VERSION__: string
 declare const __BUILD_DATE__: string
@@ -16,6 +17,7 @@ export default function SettingsView({ userId, onLogout }: Props) {
   const [confirmAccount, setConfirmAccount] = useState(false)
   const [importing, setImporting]           = useState(false)
   const [showPolicy, setShowPolicy]         = useState(false)
+  const [showToS, setShowToS]               = useState(false)
   const [darkMode, setDarkMode]             = useState(isDarkMode)
 
   const { dishes, categories } = useData()
@@ -252,6 +254,16 @@ export default function SettingsView({ userId, onLogout }: Props) {
             <p className="section-label">Legal</p>
           </div>
 
+          <button onClick={() => setShowToS(true)}
+            className="w-full flex items-center justify-between px-4 py-3.5 active:opacity-70 border-b"
+            style={{ borderColor: 'var(--cream-border)' }}>
+            <div>
+              <p className="text-sm font-semibold text-left" style={{ color: 'var(--brand)' }}>Términos y Condiciones</p>
+              <p className="text-xs mt-0.5 text-left" style={{ color: '#AFA59A' }}>Condiciones de uso del servicio</p>
+            </div>
+            <ChevronRight size={16} style={{ color: '#AFA59A', flexShrink: 0 }} />
+          </button>
+
           <button onClick={() => setShowPolicy(true)}
             className="w-full flex items-center justify-between px-4 py-3.5 active:opacity-70 border-b"
             style={{ borderColor: 'var(--cream-border)' }}>
@@ -282,6 +294,7 @@ export default function SettingsView({ userId, onLogout }: Props) {
     </div>
 
     {showPolicy && <PrivacyPolicySheet onClose={() => setShowPolicy(false)} />}
+    {showToS    && <TermsOfServiceSheet onClose={() => setShowToS(false)} />}
     </>
   )
 }

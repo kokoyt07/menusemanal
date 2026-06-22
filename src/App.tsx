@@ -4,6 +4,7 @@ import { useAuth } from './hooks/useAuth'
 import { DataProvider } from './contexts/DataContext'
 import { supabase } from './lib/supabase'
 import ToastContainer from './components/ToastContainer'
+import CookieBanner from './components/CookieBanner'
 import { Calendar, Utensils, ShoppingBag, Clock, Settings, UserCircle } from './components/Icon'
 import AuthScreen from './views/AuthScreen'
 import InstallPromptScreen from './views/InstallPromptScreen'
@@ -70,6 +71,7 @@ export default function App() {
             : <AuthScreen />
           }
           <ToastContainer />
+          <CookieBanner />
         </div>
       </div>
     )
@@ -100,6 +102,7 @@ export default function App() {
       {/* Inner column: max 640px on tablet, full width on mobile */}
       <div className="app-column">
         <ToastContainer />
+        <CookieBanner />
 
         <div className={screen.type === 'main' ? 'flex flex-col h-full' : 'hidden'}>
           {/* ── Title bar ── */}

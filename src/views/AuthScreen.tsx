@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { haptic } from '../utils/haptic'
 import PrivacyPolicySheet from './PrivacyPolicySheet'
+import TermsOfServiceSheet from './TermsOfServiceSheet'
 
 export default function AuthScreen() {
   const [mode, setMode]             = useState<'login' | 'register' | 'forgot'>('login')
@@ -12,6 +13,7 @@ export default function AuthScreen() {
   const [lastName, setLastName]     = useState('')
   const [acceptPolicy, setAccept]   = useState(false)
   const [showPolicy, setShowPolicy] = useState(false)
+  const [showToS, setShowToS]       = useState(false)
   const [loading, setLoading]       = useState(false)
   const [message, setMessage]       = useState<{ text: string; ok: boolean } | null>(null)
 
@@ -205,7 +207,13 @@ export default function AuthScreen() {
             )}
           </button>
           <p className="text-xs leading-relaxed" style={{ color: '#6B5F5A' }}>
-            He leído y acepto la{' '}
+            He leído y acepto los{' '}
+            <button type="button" onClick={() => setShowToS(true)}
+              className="font-semibold underline active:opacity-70"
+              style={{ color: 'var(--brand)' }}>
+              Términos y Condiciones
+            </button>
+            {' '}y la{' '}
             <button type="button" onClick={() => setShowPolicy(true)}
               className="font-semibold underline active:opacity-70"
               style={{ color: 'var(--brand)' }}>
@@ -284,6 +292,7 @@ export default function AuthScreen() {
       </div>
 
       {showPolicy && <PrivacyPolicySheet onClose={() => setShowPolicy(false)} />}
+      {showToS    && <TermsOfServiceSheet onClose={() => setShowToS(false)} />}
     </div>
   )
 }
