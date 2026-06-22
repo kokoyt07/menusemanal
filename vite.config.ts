@@ -10,6 +10,17 @@ export default defineConfig({
     __APP_VERSION__:  JSON.stringify(pkg.version),
     __BUILD_DATE__:   JSON.stringify(new Date().toISOString()),
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react':   ['react', 'react-dom'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-sentry':  ['@sentry/react'],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({

@@ -1,18 +1,24 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { Analytics } from '@vercel/analytics/react'
 import './index.css'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
+import { initSentry } from './lib/sentry'
 import { showToast } from './utils/toast'
 import { initTheme } from './utils/theme'
 
 initTheme()
+initSentry()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
+    <>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+      <Analytics />
+    </>
   </StrictMode>
 )
 
