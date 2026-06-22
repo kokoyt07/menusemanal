@@ -1,67 +1,28 @@
 import { useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
-import db from '../db'
-import type { DishSlot, MealMode, Dish, MenuDay } from '../types'
-import { SLOT_FIELD, getDishIdsFromDay } from '../types'
-import { fullDayTitle, weekDates } from '../utils/dateUtils'
+import { useData } from '../contexts/DataContext'
+import { useWeekMenu } from '../hooks/useWeekMenu'
+import type { DishSlot, MealMode, Dish } from '../types'
+import { SLOT_FIELD } from '../types'
+import { fullDayTitle } from '../utils/dateUtils'
 import { hasConflict, getUsedCategoryIds } from '../utils/validationUtils'
 import DishPickerModal from './DishPickerModal'
 import { showToast } from '../utils/toast'
-import { ChevronLeft, ChevronRight, Plus, Sun, Moon, FileText, AlertTriangle } from '../components/Icon'
+import { ChevronLeft, Plus, Sun, Moon, FileText, AlertTriangle, ChevronRight } from '../components/Icon'
 
-interface Props { date: string; weekStart: string; onBack: () => void }
+interface Props { userId: string; date: string; weekStart: string; onBack: () => void }
 
-export default function DayMenuView({ date, weekStart, onBack }: Props) {
+export default function DayMenuView({ userId, date, weekStart, onBack }: Props) {
   const [pickerSlot, setPickerSlot] = useState<DishSlot | null>(null)
 
-  const menu = useLiveQuery(() => db.menus.where('weekStartDate').equals(weekStart).first(), [weekStart])
-  const day  = useLiveQuery(() => db.days.where('date').equals(date).first(), [date])
+  const { dishes: allDishes } = useData()
+  const { days, updateDay }   = useWeekMenu(weekStart, userId)
 
-  const allDishIds = day ? getDishIdsFromDay(day) : []
-  const dishes = useLiveQuery(
-    () => allDishIds.length ? db.dishes.where('id').anyOf(allDishIds).toArray() : Promise.resolve<Dish[]>([]),
-    [JSON.stringify(allDishIds)]
-  )
-  const dishMap    = new Map<string, Dish>((dishes ?? []).map(d => [d.id, d]))
+  const day     = days.find(d => d.date === date)
+  const dishes  = allDishes ?? []
+  const dishMap = new Map<string, Dish>(dishes.map(d => [d.id, d]))
+
   const conflict   = day ? hasConflict(day, dishMap) : false
   const usedCatIds = day ? getUsedCategoryIds(day, dishMap) : new Set<string>()
-
-  async function ensureDay() {
-    if (day) return day
-    let menuId: string
-    if (menu) {
-      menuId = menu.id
-    } else {
-      menuId = crypto.randomUUID()
-      await db.menus.add({ id: menuId, weekStartDate: weekStart })
-      const dayObjs = weekDates(weekStart).map(d => ({
-        id: crypto.randomUUID(), menuId, date: d,
-        hasLunch: true, hasDinner: true,
-        lunchMode: 'primeroYSegundo' as MealMode,
-        dinnerMode: 'primeroYSegundo' as MealMode,
-      }))
-      await db.days.bulkAdd(dayObjs)
-      return dayObjs.find(d => d.date === date)!
-    }
-    const newDay = {
-      id: crypto.randomUUID(), menuId, date,
-      hasLunch: true, hasDinner: true,
-      lunchMode: 'primeroYSegundo' as MealMode,
-      dinnerMode: 'primeroYSegundo' as MealMode,
-    }
-    await db.days.add(newDay)
-    return newDay
-  }
-
-  async function updateDay(changes: Partial<MenuDay>) {
-    const d = await ensureDay()
-    await db.days.update(d.id, changes)
-  }
-
-  async function setDish(slot: DishSlot, dishId: string | undefined) {
-    const d = await ensureDay()
-    await db.days.update(d.id, { [SLOT_FIELD[slot]]: dishId })
-  }
 
   function getDish(slot: DishSlot): Dish | undefined {
     const id = day?.[SLOT_FIELD[slot]] as string | undefined
@@ -71,8 +32,8 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
   return (
     <div className="screen-full">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-white border-b flex-shrink-0 pt-safe"
-        style={{ borderColor: 'var(--cream-border)' }}>
+      <div className="flex items-center gap-3 px-4 py-3 border-b flex-shrink-0 pt-safe"
+        style={{ background: 'var(--surface)', borderColor: 'var(--cream-border)' }}>
         <button onClick={onBack}
           className="flex items-center gap-1 font-semibold text-sm active:opacity-60"
           style={{ color: 'var(--brand)' }}>
@@ -85,7 +46,6 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
       </div>
 
       <div className="screen-scroll px-4 py-4 space-y-3">
-        {/* Conflict warning */}
         {conflict && (
           <div className="flex items-center gap-2.5 p-3.5 rounded-2xl anim-scale"
             style={{ background: '#FEF3EE', border: '1px solid #F5C0A4' }}>
@@ -98,8 +58,8 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
           title="Comida" MealIcon={Sun} iconColor="#D4A017"
           hasMeal={day?.hasLunch ?? true} mode={day?.lunchMode ?? 'primeroYSegundo'}
           firstDish={getDish('firstLunch')} secondDish={getDish('secondLunch')} singleDish={getDish('singleLunch')}
-          onToggle={v => updateDay({ hasLunch: v })}
-          onModeChange={m => updateDay({ lunchMode: m })}
+          onToggle={v => updateDay(date, { hasLunch: v })}
+          onModeChange={m => updateDay(date, { lunchMode: m })}
           onPickFirst={() => setPickerSlot('firstLunch')}
           onPickSecond={() => setPickerSlot('secondLunch')}
           onPickSingle={() => setPickerSlot('singleLunch')}
@@ -109,14 +69,13 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
           title="Cena" MealIcon={Moon} iconColor="#7C6FA0"
           hasMeal={day?.hasDinner ?? true} mode={day?.dinnerMode ?? 'primeroYSegundo'}
           firstDish={getDish('firstDinner')} secondDish={getDish('secondDinner')} singleDish={getDish('singleDinner')}
-          onToggle={v => updateDay({ hasDinner: v })}
-          onModeChange={m => updateDay({ dinnerMode: m })}
+          onToggle={v => updateDay(date, { hasDinner: v })}
+          onModeChange={m => updateDay(date, { dinnerMode: m })}
           onPickFirst={() => setPickerSlot('firstDinner')}
           onPickSecond={() => setPickerSlot('secondDinner')}
           onPickSingle={() => setPickerSlot('singleDinner')}
         />
 
-        {/* Notes */}
         <div className="card">
           <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--cream-border)' }}>
             <FileText size={14} style={{ color: '#AFA59A' }} />
@@ -124,10 +83,7 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
           </div>
           <textarea
             value={day?.notes ?? ''}
-            onChange={async e => {
-              const d = await ensureDay()
-              await db.days.update(d.id, { notes: e.target.value })
-            }}
+            onChange={e => updateDay(date, { notes: e.target.value })}
             onBlur={() => day?.notes && showToast('Notas guardadas')}
             placeholder="Cenar fuera, cumpleanos, comprar pan…"
             rows={3}
@@ -143,8 +99,8 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
           slot={pickerSlot}
           currentDishId={day?.[SLOT_FIELD[pickerSlot]] as string | undefined}
           usedCatIds={usedCatIds}
-          onSelect={async dish => { await setDish(pickerSlot, dish.id); setPickerSlot(null) }}
-          onClear={async () => { await setDish(pickerSlot, undefined); setPickerSlot(null) }}
+          onSelect={async dish => { await updateDay(date, { [SLOT_FIELD[pickerSlot]]: dish.id }); setPickerSlot(null) }}
+          onClear={async () => { await updateDay(date, { [SLOT_FIELD[pickerSlot]]: undefined }); setPickerSlot(null) }}
           onClose={() => setPickerSlot(null)}
         />
       )}
@@ -152,7 +108,6 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
   )
 }
 
-/* ── MealCard ────────────────────────────────────────────────────────────── */
 interface MealCardProps {
   title: string
   MealIcon: React.FC<{ size?: number; style?: React.CSSProperties; sw?: number }>
@@ -177,8 +132,8 @@ function MealCard({ title, MealIcon, iconColor, hasMeal, mode,
         <button onClick={() => onToggle(!hasMeal)} className="relative flex-shrink-0" style={{ width: 44, height: 24 }}>
           <div className="absolute inset-0 rounded-full transition-colors duration-200"
             style={{ background: hasMeal ? 'var(--brand)' : '#D9D2CA' }} />
-          <div className="absolute top-[2px] rounded-full bg-white transition-all duration-200"
-            style={{ width: 20, height: 20, left: hasMeal ? 22 : 2, boxShadow: '0 1px 3px rgba(0,0,0,0.20)' }} />
+          <div className="absolute top-[2px] rounded-full transition-all duration-200"
+            style={{ background: 'white', width: 20, height: 20, left: hasMeal ? 22 : 2, boxShadow: '0 1px 3px rgba(0,0,0,0.20)' }} />
         </button>
       </div>
 
@@ -189,7 +144,7 @@ function MealCard({ title, MealIcon, iconColor, hasMeal, mode,
               <button key={m} onClick={() => onModeChange(m)}
                 className="flex-1 py-2 rounded-[10px] text-xs font-semibold transition-all"
                 style={{
-                  background: mode === m ? 'white' : 'transparent',
+                  background: mode === m ? 'var(--surface)' : 'transparent',
                   color: mode === m ? 'var(--brand)' : '#AFA59A',
                   boxShadow: mode === m ? '0 1px 4px rgba(47,29,27,0.10)' : 'none',
                 }}>

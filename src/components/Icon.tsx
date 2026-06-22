@@ -213,3 +213,27 @@ export const AlertCircle = (p: P) => (
     <line x1="12" y1="16" x2="12.01" y2="16"/>
   </I>
 )
+
+export const LogOut = (p: P) => (
+  <I {...p}>
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+    <polyline points="16 17 21 12 16 7"/>
+    <line x1="21" y1="12" x2="9" y2="12"/>
+  </I>
+)
+
+export const History = (p: P) => (
+  <I {...p}>
+    <polyline points="12 8 12 12 14 14"/>
+    <path d="M3.05 11a9 9 0 1 0 .5-4H1"/>
+    <polyline points="1 3 1 7 5 7"/>
+  </I>
+)
+
+export const Info = (p: P) => (
+  <I {...p}>
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="16" x2="12" y2="12"/>
+    <line x1="12" y1="8" x2="12.01" y2="8"/>
+  </I>
+)

@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
-import db from '../db'
+import { useData } from '../contexts/DataContext'
 import type { DishSlot, Dish } from '../types'
 import { SLOT_LABEL, SLOT_COURSE, COURSE_LABEL } from '../types'
 import { wouldConflict } from '../utils/validationUtils'
@@ -22,8 +21,7 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
   const [filterCatId, setFilterCatId] = useState<string | null>(null)
   const [addingDish, setAddingDish]   = useState(false)
 
-  const categories = useLiveQuery(() => db.categories.orderBy('sortOrder').toArray())
-  const allDishes  = useLiveQuery(() => db.dishes.orderBy('name').toArray())
+  const { dishes: allDishes, categories } = useData()
 
   const filtered = (allDishes ?? [])
     .filter(d => {
@@ -67,7 +65,6 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
           </button>
         </div>
 
-        {/* Search */}
         <div className="px-4 pb-2 flex-shrink-0">
           <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
             style={{ background: 'var(--cream)', border: '1.5px solid var(--cream-border)' }}>
@@ -84,7 +81,6 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
           </div>
         </div>
 
-        {/* Category chips */}
         <div className="flex-shrink-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           <div className="flex gap-1.5 px-4 pb-2">
             <FilterChip label="Todos" active={!filterCatId} onClick={() => setFilterCatId(null)} />
@@ -96,7 +92,6 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
           </div>
         </div>
 
-        {/* Show-all toggle */}
         {SLOT_COURSE[slot] !== 'unico' && (
           <div className="px-4 pb-3 flex-shrink-0">
             <label className="flex items-center gap-2.5 cursor-pointer">
@@ -112,7 +107,6 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
           </div>
         )}
 
-        {/* List */}
         <div className="sheet-list">
           {currentDish && (
             <div className="mx-4 mb-2 p-3.5 rounded-xl anim-scale"
@@ -179,12 +173,9 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
                   )
                 })}
               </ul>
-
-              {/* Create new dish button */}
               <button onClick={() => setAddingDish(true)}
                 className="mx-4 mt-3 w-[calc(100%-2rem)] flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold active:opacity-70"
-                style={{ background: 'var(--cream)', color: 'var(--brand)',
-                         border: '1.5px dashed var(--cream-border)' }}>
+                style={{ background: 'var(--cream)', color: 'var(--brand)', border: '1.5px dashed var(--cream-border)' }}>
                 <Plus size={14} /><span>Crear plato nuevo</span>
               </button>
             </>

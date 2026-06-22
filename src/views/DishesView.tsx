@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
-import db from '../db'
-import type { Dish, CourseType, DishCategory } from '../types'
+import { useData } from '../contexts/DataContext'
+import type { Dish, CourseType } from '../types'
 import { COURSE_LABEL } from '../types'
 import AddEditDishModal from './AddEditDishModal'
 import { showToast } from '../utils/toast'
@@ -9,16 +8,15 @@ import { haptic } from '../utils/haptic'
 import { Search, X, Plus, Trash, Utensils, Heart, Sliders, Pencil } from '../components/Icon'
 
 export default function DishesView() {
-  const [search, setSearch]               = useState('')
-  const [filterCatId, setFilterCatId]     = useState<string | null>(null)
-  const [filterCourse, setFilterCourse]   = useState<CourseType | 'todos'>('todos')
-  const [filterFavs, setFilterFavs]       = useState(false)
-  const [editingDish, setEditingDish]     = useState<Dish | null | 'new'>(null)
-  const [confirmId, setConfirmId]         = useState<string | null>(null)
-  const [showCatMgr, setShowCatMgr]       = useState(false)
+  const [search, setSearch]             = useState('')
+  const [filterCatId, setFilterCatId]   = useState<string | null>(null)
+  const [filterCourse, setFilterCourse] = useState<CourseType | 'todos'>('todos')
+  const [filterFavs, setFilterFavs]     = useState(false)
+  const [editingDish, setEditingDish]   = useState<Dish | null | 'new'>(null)
+  const [confirmId, setConfirmId]       = useState<string | null>(null)
+  const [showCatMgr, setShowCatMgr]     = useState(false)
 
-  const categories = useLiveQuery(() => db.categories.orderBy('sortOrder').toArray())
-  const allDishes  = useLiveQuery(() => db.dishes.orderBy('name').toArray())
+  const { dishes: allDishes, categories, updateDish, deleteDish } = useData()
 
   const filtered = (allDishes ?? []).filter(d => {
     const matchSearch = !search || d.name.toLowerCase().includes(search.toLowerCase())
@@ -28,24 +26,23 @@ export default function DishesView() {
     return matchSearch && matchCat && matchCourse && matchFav
   })
 
-  async function deleteDish(dish: Dish) {
-    await db.dishes.delete(dish.id)
+  async function handleDelete(dish: Dish) {
+    await deleteDish(dish.id)
     setConfirmId(null)
     showToast(`"${dish.name}" eliminado`)
   }
 
   async function toggleFavorite(dish: Dish) {
     haptic()
-    await db.dishes.update(dish.id, { isFavorite: !dish.isFavorite })
+    await updateDish(dish.id, { isFavorite: !dish.isFavorite })
   }
 
   const dishCount = allDishes?.length ?? 0
 
   return (
     <div className="flex flex-col flex-1 min-h-0" style={{ background: 'var(--cream)' }}>
-      {/* Search + filters */}
-      <div className="px-4 pt-3 pb-3 bg-white border-b flex-shrink-0 space-y-2.5"
-        style={{ borderColor: 'var(--cream-border)' }}>
+      <div className="px-4 pt-3 pb-3 border-b flex-shrink-0 space-y-2.5"
+        style={{ background: 'var(--surface)', borderColor: 'var(--cream-border)' }}>
 
         <div className="flex items-center gap-2">
           <div className="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
@@ -61,20 +58,14 @@ export default function DishesView() {
               </button>
             )}
           </div>
-          {/* Favorites filter toggle */}
           <button onClick={() => { haptic(); setFilterFavs(v => !v) }}
             className="w-10 h-10 flex items-center justify-center rounded-xl flex-shrink-0 active:opacity-70"
-            style={{
-              background: filterFavs ? 'var(--brand)' : 'var(--cream)',
-              border: '1.5px solid var(--cream-border)',
-            }}>
+            style={{ background: filterFavs ? 'var(--brand)' : 'var(--cream)', border: '1.5px solid var(--cream-border)' }}>
             <Heart size={16} sw={filterFavs ? 0 : 1.75}
-              style={{ color: filterFavs ? 'white' : '#AFA59A',
-                       fill: filterFavs ? 'white' : 'none' }} />
+              style={{ color: filterFavs ? 'white' : '#AFA59A', fill: filterFavs ? 'white' : 'none' }} />
           </button>
         </div>
 
-        {/* Category chips + manage button */}
         <div className="flex items-center gap-2">
           <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
             <div className="flex gap-1.5 pb-0.5">
@@ -93,7 +84,6 @@ export default function DishesView() {
           </button>
         </div>
 
-        {/* Course filter */}
         <div className="flex rounded-xl p-0.5" style={{ background: 'var(--cream)' }}>
           {(['todos', 'primero', 'segundo', 'unico'] as const).map(c => (
             <button key={c} onClick={() => setFilterCourse(c)}
@@ -108,7 +98,6 @@ export default function DishesView() {
           ))}
         </div>
 
-        {/* Count */}
         <p className="text-[11px] font-semibold text-right" style={{ color: '#AFA59A' }}>
           {filtered.length !== dishCount
             ? `${filtered.length} de ${dishCount} platos`
@@ -116,7 +105,6 @@ export default function DishesView() {
         </p>
       </div>
 
-      {/* List */}
       <div className="content-area">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48">
@@ -136,13 +124,12 @@ export default function DishesView() {
               <li key={dish.id} className="list-item" style={{ '--i': idx } as React.CSSProperties}>
                 {confirmId === dish.id ? (
                   <div className="flex items-center justify-between px-4 py-3.5 anim-scale"
-                    style={{ background: '#FEF3EE',
-                             borderTop: idx > 0 ? '1px solid #F5C0A4' : undefined }}>
+                    style={{ background: '#FEF3EE', borderTop: idx > 0 ? '1px solid #F5C0A4' : undefined }}>
                     <p className="text-sm font-medium" style={{ color: '#8B4513' }}>
                       Eliminar "{dish.name}"?
                     </p>
                     <div className="flex gap-2">
-                      <button onClick={() => deleteDish(dish)}
+                      <button onClick={() => handleDelete(dish)}
                         className="px-3 py-1 rounded-lg text-xs font-semibold text-white"
                         style={{ background: '#C0392B' }}>
                         Eliminar
@@ -157,13 +144,11 @@ export default function DishesView() {
                 ) : (
                   <div className="flex items-center gap-2 px-4 py-3"
                     style={{ borderTop: idx > 0 ? '1px solid var(--cream-border)' : undefined }}>
-                    {/* Favorite toggle */}
                     <button onClick={() => toggleFavorite(dish)}
                       className="flex-shrink-0 w-7 h-7 flex items-center justify-center active:scale-90 transition-transform">
                       <Heart size={15}
                         style={{ color: dish.isFavorite ? '#C0392B' : '#D9D2CA',
-                                 fill: dish.isFavorite ? '#C0392B' : 'none',
-                                 transition: 'all 0.15s' }} />
+                                 fill: dish.isFavorite ? '#C0392B' : 'none', transition: 'all 0.15s' }} />
                     </button>
                     <button onClick={() => setEditingDish(dish)} className="flex-1 min-w-0 text-left">
                       <p className="text-sm font-semibold truncate" style={{ color: 'var(--brand)' }}>
@@ -183,7 +168,7 @@ export default function DishesView() {
                       </div>
                     </button>
                     <button onClick={() => setConfirmId(dish.id)}
-                      className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full active:bg-red-50 transition-colors">
+                      className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full active:bg-red-50">
                       <Trash size={15} style={{ color: '#D9D2CA' }} />
                     </button>
                   </div>
@@ -195,7 +180,6 @@ export default function DishesView() {
         <div className="h-24" />
       </div>
 
-      {/* FAB */}
       <button
         onClick={() => { haptic(); setEditingDish('new') }}
         className="fixed flex items-center justify-center rounded-full active:scale-95 transition-transform"
@@ -217,37 +201,31 @@ export default function DishesView() {
       )}
 
       {showCatMgr && (
-        <CategoryManagerSheet
-          categories={categories ?? []}
-          onClose={() => setShowCatMgr(false)}
-        />
+        <CategoryManagerSheet onClose={() => setShowCatMgr(false)} />
       )}
     </div>
   )
 }
 
-/* ── Category Manager Sheet ─────────────────────────────────────────────── */
-function CategoryManagerSheet({ categories, onClose }: { categories: DishCategory[]; onClose: () => void }) {
-  const [renamingId, setRenamingId]     = useState<string | null>(null)
-  const [renameText, setRenameText]     = useState('')
+function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
+  const { categories, renameCategory, deleteCategory } = useData()
+  const [renamingId, setRenamingId]           = useState<string | null>(null)
+  const [renameText, setRenameText]           = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
-  async function renameCategory(cat: DishCategory) {
+  async function handleRename(id: string) {
     const t = renameText.trim()
-    if (!t || t === cat.name) { setRenamingId(null); return }
-    await db.categories.update(cat.id, { name: t })
+    const cat = (categories ?? []).find(c => c.id === id)
+    if (!t || t === cat?.name) { setRenamingId(null); return }
+    await renameCategory(id, t)
     setRenamingId(null)
     showToast('Categoria renombrada')
   }
 
-  async function deleteCategory(cat: DishCategory) {
-    const affectedDishes = await db.dishes.where('categoryIds').equals(cat.id).toArray()
-    for (const dish of affectedDishes) {
-      await db.dishes.update(dish.id, { categoryIds: dish.categoryIds.filter(c => c !== cat.id) })
-    }
-    await db.categories.delete(cat.id)
+  async function handleDelete(id: string, name: string) {
+    await deleteCategory(id)
     setConfirmDeleteId(null)
-    showToast(`"${cat.name}" eliminada`)
+    showToast(`"${name}" eliminada`)
   }
 
   return (
@@ -267,17 +245,17 @@ function CategoryManagerSheet({ categories, onClose }: { categories: DishCategor
         </div>
 
         <div className="sheet-list px-4 py-3 space-y-2">
-          {categories.length === 0 && (
+          {(categories ?? []).length === 0 && (
             <p className="text-sm text-center py-8" style={{ color: '#AFA59A' }}>No hay categorias todavia</p>
           )}
-          {categories.map(cat => (
+          {(categories ?? []).map(cat => (
             <div key={cat.id}>
               {confirmDeleteId === cat.id ? (
                 <div className="flex items-center justify-between p-3 rounded-xl anim-scale"
                   style={{ background: '#FEF3EE', border: '1px solid #F5C0A4' }}>
                   <p className="text-sm font-medium" style={{ color: '#8B4513' }}>Eliminar "{cat.name}"?</p>
                   <div className="flex gap-2">
-                    <button onClick={() => deleteCategory(cat)}
+                    <button onClick={() => handleDelete(cat.id, cat.name)}
                       className="px-3 py-1 rounded-lg text-xs font-semibold text-white"
                       style={{ background: '#C0392B' }}>
                       Eliminar
@@ -293,19 +271,15 @@ function CategoryManagerSheet({ categories, onClose }: { categories: DishCategor
                 <div className="flex gap-2">
                   <input autoFocus value={renameText}
                     onChange={e => setRenameText(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') renameCategory(cat) }}
+                    onKeyDown={e => { if (e.key === 'Enter') handleRename(cat.id) }}
                     className="flex-1 px-3.5 py-2.5 rounded-xl text-sm outline-none"
                     style={{ background: 'var(--cream)', border: '1.5px solid var(--brand)', color: 'var(--brand)' }} />
-                  <button onClick={() => renameCategory(cat)}
+                  <button onClick={() => handleRename(cat.id)}
                     className="px-4 py-2.5 rounded-xl text-sm font-bold"
-                    style={{ background: 'var(--brand)', color: 'white' }}>
-                    OK
-                  </button>
+                    style={{ background: 'var(--brand)', color: 'white' }}>OK</button>
                   <button onClick={() => setRenamingId(null)}
                     className="px-3 py-2.5 rounded-xl text-sm font-semibold"
-                    style={{ background: 'var(--cream)', color: 'var(--brand)' }}>
-                    X
-                  </button>
+                    style={{ background: 'var(--cream)', color: 'var(--brand)' }}>X</button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 p-3 rounded-xl"

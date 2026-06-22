@@ -1,44 +1,35 @@
 import { useState, useRef } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
-import db from '../db'
+import { useData } from '../contexts/DataContext'
+import { useWeekMenu } from '../hooks/useWeekMenu'
+import { useShoppingExtras } from '../hooks/useShoppingExtras'
 import type { Dish } from '../types'
 import { getDishIdsFromDay } from '../types'
 import { currentWeekStart, addWeeks, weekDates, weekRangeLabel, isCurrentWeek, fullDayTitle } from '../utils/dateUtils'
 import { showToast } from '../utils/toast'
 import { haptic } from '../utils/haptic'
-import { ChevronLeft, ChevronRight, ShoppingBag, Share, Plus, X, Minus } from '../components/Icon'
+import { ChevronLeft, ChevronRight, ShoppingBag, Share, Plus, X } from '../components/Icon'
 
-export default function ShoppingListView() {
-  const [weekStart, setWeekStart]   = useState(currentWeekStart)
-  const [checked, setChecked]       = useState<Set<string>>(new Set())
+interface Props { userId: string }
+
+export default function ShoppingListView({ userId }: Props) {
+  const [weekStart, setWeekStart]     = useState(currentWeekStart)
+  const [checked, setChecked]         = useState<Set<string>>(new Set())
   const [newItemText, setNewItemText] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const dates = weekDates(weekStart)
+  const { dishes: allDishes, categories } = useData()
+  const { days }                          = useWeekMenu(weekStart, userId)
+  const { extras, addExtra, removeExtra } = useShoppingExtras(weekStart, userId)
 
-  const days = useLiveQuery(
-    () => db.days.where('date').anyOf(dates).toArray(),
-    [weekStart]
-  )
-
-  const allDishIds = (days ?? []).flatMap(d => getDishIdsFromDay(d))
-  const dishes = useLiveQuery(
-    () => allDishIds.length ? db.dishes.where('id').anyOf(allDishIds).toArray() : Promise.resolve<Dish[]>([]),
-    [JSON.stringify(allDishIds)]
-  )
-  const categories  = useLiveQuery(() => db.categories.orderBy('sortOrder').toArray())
-  const manualItems = useLiveQuery(
-    () => db.shoppingExtras.where('weekStart').equals(weekStart).toArray(),
-    [weekStart]
-  )
-
-  const dishMap = new Map<string, Dish>((dishes ?? []).map(d => [d.id, d]))
+  const dates   = weekDates(weekStart)
+  const dishes  = allDishes ?? []
+  const dishMap = new Map<string, Dish>(dishes.map(d => [d.id, d]))
 
   // Group dishes by category
   const grouped = new Map<string, { catName: string; items: Array<{ name: string; key: string; count: number }> }>()
   const uncategorized: Array<{ name: string; key: string; count: number }> = []
 
-  for (const day of (days ?? [])) {
+  for (const day of days) {
     const ids = getDishIdsFromDay(day)
     for (const id of ids) {
       const dish = dishMap.get(id)
@@ -62,7 +53,7 @@ export default function ShoppingListView() {
     }
   }
 
-  const totalItems = [...grouped.values()].reduce((s, g) => s + g.items.length, 0) + uncategorized.length
+  const totalItems  = [...grouped.values()].reduce((s, g) => s + g.items.length, 0) + uncategorized.length
   const checkedCount = checked.size
 
   function toggleCheck(key: string) {
@@ -77,13 +68,13 @@ export default function ShoppingListView() {
   async function addManualItem() {
     const text = newItemText.trim()
     if (!text) return
-    await db.shoppingExtras.add({ id: crypto.randomUUID(), weekStart, text })
+    await addExtra(text)
     setNewItemText('')
     inputRef.current?.focus()
   }
 
   async function removeManualItem(id: string) {
-    await db.shoppingExtras.delete(id)
+    await removeExtra(id)
     setChecked(prev => { const n = new Set(prev); n.delete(`extra:${id}`); return n })
   }
 
@@ -99,9 +90,9 @@ export default function ShoppingListView() {
       for (const item of uncategorized) lines.push(`  • ${item.name}`)
       lines.push('')
     }
-    if ((manualItems ?? []).length > 0) {
+    if ((extras ?? []).length > 0) {
       lines.push('EXTRAS')
-      for (const item of manualItems ?? []) lines.push(`  • ${item.text}`)
+      for (const item of extras ?? []) lines.push(`  • ${item.text}`)
     }
     const text = lines.join('\n').trim()
     try {
@@ -110,12 +101,17 @@ export default function ShoppingListView() {
     } catch { /* cancelled */ }
   }
 
+  function changeWeek(newStart: string) {
+    setWeekStart(newStart)
+    setChecked(new Set())
+  }
+
   return (
     <div className="flex flex-col flex-1 min-h-0" style={{ background: 'var(--cream)' }}>
       {/* Week navigator */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-white border-b flex-shrink-0"
-        style={{ borderColor: 'var(--cream-border)' }}>
-        <button onClick={() => { setWeekStart(w => addWeeks(w, -1)); setChecked(new Set()) }}
+      <div className="flex items-center gap-2 px-4 py-3 border-b flex-shrink-0"
+        style={{ background: 'var(--surface)', borderColor: 'var(--cream-border)' }}>
+        <button onClick={() => changeWeek(addWeeks(weekStart, -1))}
           className="w-10 h-10 flex items-center justify-center rounded-full active:opacity-60 flex-shrink-0"
           style={{ color: 'var(--brand)' }}>
           <ChevronLeft size={22} />
@@ -124,13 +120,13 @@ export default function ShoppingListView() {
           <p className="font-bold text-sm" style={{ color: 'var(--brand)' }}>{weekRangeLabel(weekStart)}</p>
           {isCurrentWeek(weekStart)
             ? <p className="text-xs font-semibold" style={{ color: '#AFA59A' }}>Esta semana</p>
-            : <button onClick={() => { setWeekStart(currentWeekStart()); setChecked(new Set()) }}
+            : <button onClick={() => changeWeek(currentWeekStart())}
                 className="text-xs font-semibold underline" style={{ color: '#AFA59A' }}>
                 Ir a hoy
               </button>
           }
         </div>
-        <button onClick={() => { setWeekStart(w => addWeeks(w, 1)); setChecked(new Set()) }}
+        <button onClick={() => changeWeek(addWeeks(weekStart, 1))}
           className="w-10 h-10 flex items-center justify-center rounded-full active:opacity-60 flex-shrink-0"
           style={{ color: 'var(--brand)' }}>
           <ChevronRight size={22} />
@@ -138,9 +134,9 @@ export default function ShoppingListView() {
       </div>
 
       {/* Action bar */}
-      <div className="px-4 py-2.5 bg-white border-b flex items-center gap-2 flex-shrink-0"
-        style={{ borderColor: 'var(--cream-border)' }}>
-        <button onClick={shareAsText} disabled={totalItems === 0 && (manualItems ?? []).length === 0}
+      <div className="px-4 py-2.5 border-b flex items-center gap-2 flex-shrink-0"
+        style={{ background: 'var(--surface)', borderColor: 'var(--cream-border)' }}>
+        <button onClick={shareAsText} disabled={totalItems === 0 && (extras ?? []).length === 0}
           className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:opacity-75 disabled:opacity-40"
           style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
           <Share size={14} /><span>Compartir lista</span>
@@ -156,7 +152,7 @@ export default function ShoppingListView() {
 
       {/* Content */}
       <div className="content-area px-4 py-4 space-y-3">
-        {totalItems === 0 && (manualItems ?? []).length === 0 ? (
+        {totalItems === 0 && (extras ?? []).length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-center">
             <ShoppingBag size={44} sw={1.25} style={{ color: '#D9D2CA', marginBottom: 12 }} />
             <p className="text-sm font-semibold" style={{ color: 'var(--brand)' }}>Sin menu esta semana</p>
@@ -164,13 +160,11 @@ export default function ShoppingListView() {
           </div>
         ) : (
           <>
-            {/* Auto-generated sections */}
             {[...grouped.entries()].map(([cid, { catName, items }], idx) => (
               <CategorySection key={cid} title={catName} idx={idx}
                 items={items.map(item => ({ ...item, checked: checked.has(item.key) }))}
                 onToggle={toggleCheck} />
             ))}
-
             {uncategorized.length > 0 && (
               <CategorySection title="Otros" idx={grouped.size}
                 items={uncategorized.map(item => ({ ...item, checked: checked.has(item.key) }))}
@@ -179,7 +173,7 @@ export default function ShoppingListView() {
           </>
         )}
 
-        {/* Manual extras section — always visible */}
+        {/* Manual extras */}
         <div className="rounded-2xl overflow-hidden"
           style={{ background: 'var(--surface)', border: '1px solid var(--cream-border)',
                    boxShadow: '0 1px 4px rgba(47,29,27,0.06)' }}>
@@ -187,7 +181,7 @@ export default function ShoppingListView() {
             <p className="section-label">Extras manuales</p>
           </div>
 
-          {(manualItems ?? []).map((item, i) => {
+          {(extras ?? []).map((item, i) => {
             const key = `extra:${item.id}`
             const isChecked = checked.has(key)
             return (
@@ -213,14 +207,10 @@ export default function ShoppingListView() {
             )
           })}
 
-          {/* Add manual item input */}
           <div className="flex items-center gap-2 px-4 py-3 border-t"
             style={{ borderColor: 'var(--cream-border)' }}>
-            <input ref={inputRef}
-              type="text"
-              placeholder="Añadir item…"
-              value={newItemText}
-              onChange={e => setNewItemText(e.target.value)}
+            <input ref={inputRef} type="text" placeholder="Añadir item…"
+              value={newItemText} onChange={e => setNewItemText(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && addManualItem()}
               className="flex-1 bg-transparent text-sm outline-none"
               style={{ color: 'var(--brand)' }} />
@@ -238,12 +228,10 @@ export default function ShoppingListView() {
   )
 }
 
-/* ── Category section ────────────────────────────────────────────────────── */
 function CategorySection({
   title, idx, items, onToggle,
 }: {
-  title: string
-  idx: number
+  title: string; idx: number
   items: Array<{ name: string; key: string; count: number; checked: boolean }>
   onToggle: (key: string) => void
 }) {

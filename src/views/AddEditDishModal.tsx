@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
-import db from '../db'
+import { useData } from '../contexts/DataContext'
 import type { Dish, CourseType } from '../types'
 import { COURSE_LABEL } from '../types'
 import { X, Plus, Check } from '../components/Icon'
@@ -15,7 +14,7 @@ export default function AddEditDishModal({ dish, onClose, presetCourse }: Props)
   const [newCatName, setNewCatName] = useState('')
   const [showNewCat, setShowNewCat] = useState(false)
 
-  const categories = useLiveQuery(() => db.categories.orderBy('sortOrder').toArray())
+  const { categories, addCategory, addDish, updateDish } = useData()
 
   function toggleCat(id: string) {
     setSelCatIds(prev => {
@@ -25,12 +24,11 @@ export default function AddEditDishModal({ dish, onClose, presetCourse }: Props)
     })
   }
 
-  async function addCategory() {
+  async function handleAddCategory() {
     const trimmed = newCatName.trim()
     if (!trimmed) return
-    const id = crypto.randomUUID()
-    await db.categories.add({ id, name: trimmed, isDefault: false, sortOrder: (categories?.length ?? 0) })
-    setSelCatIds(prev => new Set([...prev, id]))
+    const cat = await addCategory(trimmed)
+    setSelCatIds(prev => new Set([...prev, cat.id]))
     setNewCatName('')
     setShowNewCat(false)
   }
@@ -38,18 +36,12 @@ export default function AddEditDishModal({ dish, onClose, presetCourse }: Props)
   async function save() {
     const trimmed = name.trim()
     if (!trimmed) return
-    const catIds = [...selCatIds]
-
+    const categoryIds = [...selCatIds]
+    const notesVal = notes.trim() || undefined
     if (dish) {
-      await db.dishes.update(dish.id, {
-        name: trimmed, course, categoryIds: catIds, notes: notes.trim() || undefined,
-      })
+      await updateDish(dish.id, { name: trimmed, course, categoryIds, notes: notesVal })
     } else {
-      await db.dishes.add({
-        id: crypto.randomUUID(), name: trimmed, course,
-        categoryIds: catIds, notes: notes.trim() || undefined,
-        createdAt: new Date().toISOString(),
-      })
+      await addDish({ name: trimmed, course, categoryIds, notes: notesVal })
     }
     onClose()
   }
@@ -57,12 +49,10 @@ export default function AddEditDishModal({ dish, onClose, presetCourse }: Props)
   return (
     <div className="sheet-overlay" onClick={onClose}>
       <div className="sheet-content" onClick={e => e.stopPropagation()}>
-        {/* Handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full" style={{ background: '#D9D2CA' }} />
         </div>
 
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-2.5 border-b flex-shrink-0"
           style={{ borderColor: 'var(--cream-border)' }}>
           <button onClick={onClose}
@@ -81,22 +71,15 @@ export default function AddEditDishModal({ dish, onClose, presetCourse }: Props)
         </div>
 
         <div className="sheet-list px-4 py-4 space-y-5">
-          {/* Name */}
           <div>
             <label className="section-label block mb-1.5">Nombre</label>
-            <input type="text" value={name}
-              onChange={e => setName(e.target.value)}
+            <input type="text" value={name} onChange={e => setName(e.target.value)}
               placeholder="Nombre del plato"
-              className="w-full px-3.5 py-3 rounded-xl text-sm outline-none transition-colors"
-              style={{
-                background: 'var(--cream)',
-                border: '1.5px solid var(--cream-border)',
-                color: 'var(--brand)',
-              }}
+              className="w-full px-3.5 py-3 rounded-xl text-sm outline-none"
+              style={{ background: 'var(--cream)', border: '1.5px solid var(--cream-border)', color: 'var(--brand)' }}
               autoFocus />
           </div>
 
-          {/* Course type */}
           <div>
             <label className="section-label block mb-1.5">Tipo</label>
             <div className="flex rounded-xl p-0.5" style={{ background: 'var(--cream)' }}>
@@ -114,7 +97,6 @@ export default function AddEditDishModal({ dish, onClose, presetCourse }: Props)
             </div>
           </div>
 
-          {/* Categories */}
           <div>
             <label className="section-label block mb-1.5">Categorias</label>
             <div className="space-y-1.5">
@@ -122,7 +104,7 @@ export default function AddEditDishModal({ dish, onClose, presetCourse }: Props)
                 const selected = selCatIds.has(cat.id)
                 return (
                   <button key={cat.id} onClick={() => toggleCat(cat.id)}
-                    className="w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-colors active:opacity-70"
+                    className="w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium active:opacity-70"
                     style={{
                       background: selected ? 'var(--brand-soft)' : 'var(--cream)',
                       border: `1.5px solid ${selected ? 'rgba(47,29,27,0.18)' : 'var(--cream-border)'}`,
@@ -142,8 +124,8 @@ export default function AddEditDishModal({ dish, onClose, presetCourse }: Props)
                     className="flex-1 px-3.5 py-2.5 rounded-xl text-sm outline-none"
                     style={{ background: 'var(--cream)', border: '1.5px solid var(--cream-border)', color: 'var(--brand)' }}
                     autoFocus
-                    onKeyDown={e => e.key === 'Enter' && addCategory()} />
-                  <button onClick={addCategory}
+                    onKeyDown={e => e.key === 'Enter' && handleAddCategory()} />
+                  <button onClick={handleAddCategory}
                     className="px-4 py-2.5 rounded-xl text-sm font-bold"
                     style={{ background: 'var(--brand)', color: 'white' }}>
                     OK
@@ -160,7 +142,6 @@ export default function AddEditDishModal({ dish, onClose, presetCourse }: Props)
             </div>
           </div>
 
-          {/* Notes */}
           <div>
             <label className="section-label block mb-1.5">
               Notas / Ingredientes <span className="normal-case font-normal" style={{ color: '#C8C0B5' }}>(opcional)</span>
@@ -171,7 +152,6 @@ export default function AddEditDishModal({ dish, onClose, presetCourse }: Props)
               className="w-full px-3.5 py-3 rounded-xl text-sm outline-none resize-none"
               style={{ background: 'var(--cream)', border: '1.5px solid var(--cream-border)', color: 'var(--brand)' }} />
           </div>
-
           <div className="h-2" />
         </div>
       </div>

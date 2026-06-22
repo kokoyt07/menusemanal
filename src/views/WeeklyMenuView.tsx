@@ -1,44 +1,37 @@
 import { useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
-import db from '../db'
+import { useData } from '../contexts/DataContext'
+import { useWeekMenu } from '../hooks/useWeekMenu'
 import type { Dish } from '../types'
 import { currentWeekStart, addWeeks, weekDates, isCurrentWeek, weekRangeLabel,
          dayNameShort, dayNumber, isToday, fullDayTitle } from '../utils/dateUtils'
 import { hasConflict } from '../utils/validationUtils'
-import { getDishIdsFromDay } from '../types'
 import { autoFillWeek } from '../utils/autoFill'
 import { showToast } from '../utils/toast'
 import { haptic } from '../utils/haptic'
 import { ChevronLeft, ChevronRight, Sun, Moon, FileText, AlertTriangle, Zap, Share, Trash } from '../components/Icon'
 
 interface Props {
+  userId: string
   onDayTap: (date: string, weekStart: string) => void
 }
 
-export default function WeeklyMenuView({ onDayTap }: Props) {
+export default function WeeklyMenuView({ userId, onDayTap }: Props) {
   const [weekStart, setWeekStart]       = useState(currentWeekStart)
   const [filling, setFilling]           = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
 
-  const dates = weekDates(weekStart)
+  const { dishes: allDishes, addDish } = useData()
+  const { days, updateDay, clearWeek }  = useWeekMenu(weekStart, userId)
 
-  const days = useLiveQuery(
-    () => db.days.where('date').anyOf(dates).toArray(),
-    [weekStart]
-  )
-
-  const allDishIds = (days ?? []).flatMap(d => getDishIdsFromDay(d))
-  const dishes = useLiveQuery(
-    () => allDishIds.length ? db.dishes.where('id').anyOf(allDishIds).toArray() : Promise.resolve<Dish[]>([]),
-    [JSON.stringify(allDishIds)]
-  )
-  const dishMap = new Map<string, Dish>((dishes ?? []).map(d => [d.id, d]))
+  const dates   = weekDates(weekStart)
+  const dishes  = allDishes ?? []
+  const dishMap = new Map<string, Dish>(dishes.map(d => [d.id, d]))
 
   async function handleAutoFill() {
     haptic()
     setFilling(true)
     try {
-      await autoFillWeek(weekStart)
+      await autoFillWeek(weekStart, dishes, days, updateDay, addDish)
       showToast('Semana rellenada')
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'Error al rellenar', 'error')
@@ -49,22 +42,15 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
 
   async function handleClearWeek() {
     haptic(12)
-    const empty = {
-      firstLunchDishId: undefined, secondLunchDishId: undefined, singleLunchDishId: undefined,
-      firstDinnerDishId: undefined, secondDinnerDishId: undefined, singleDinnerDishId: undefined,
-    }
-    for (const day of (days ?? [])) {
-      await db.days.update(day.id, empty)
-    }
+    await clearWeek()
     setConfirmClear(false)
     showToast('Semana vaciada')
   }
 
   async function handleShare() {
-    const dayList = days ?? []
     const lines: string[] = [`Semana ${weekRangeLabel(weekStart)}`, '']
     for (const date of dates) {
-      const day = dayList.find(d => d.date === date)
+      const day = days.find(d => d.date === date)
       if (!day) continue
       lines.push(fullDayTitle(date).toUpperCase())
       if (day.hasLunch) {
@@ -89,10 +75,9 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
 
   return (
     <div className="flex flex-col flex-1 min-h-0" style={{ background: 'var(--cream)' }}>
-
       {/* Week navigator */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-white border-b flex-shrink-0"
-        style={{ borderColor: 'var(--cream-border)' }}>
+      <div className="flex items-center gap-2 px-4 py-3 border-b flex-shrink-0"
+        style={{ background: 'var(--surface)', borderColor: 'var(--cream-border)' }}>
         <button onClick={() => setWeekStart(w => addWeeks(w, -1))}
           className="w-10 h-10 flex items-center justify-center rounded-full active:opacity-60 flex-shrink-0"
           style={{ color: 'var(--brand)' }}>
@@ -117,7 +102,7 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
 
       {/* Action bar */}
       {confirmClear ? (
-        <div className="px-4 py-2.5 bg-white border-b flex items-center justify-between gap-2 flex-shrink-0 anim-scale"
+        <div className="px-4 py-2.5 border-b flex items-center justify-between gap-2 flex-shrink-0 anim-scale"
           style={{ borderColor: 'var(--cream-border)', background: '#FEF3EE' }}>
           <p className="text-sm font-medium" style={{ color: '#8B4513' }}>Vaciar todos los platos de la semana?</p>
           <div className="flex gap-2">
@@ -134,8 +119,8 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
           </div>
         </div>
       ) : (
-        <div className="px-4 py-2.5 bg-white border-b flex gap-2 flex-shrink-0"
-          style={{ borderColor: 'var(--cream-border)' }}>
+        <div className="px-4 py-2.5 border-b flex gap-2 flex-shrink-0"
+          style={{ background: 'var(--surface)', borderColor: 'var(--cream-border)' }}>
           <button onClick={handleAutoFill} disabled={filling}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:opacity-75 disabled:opacity-40"
             style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
@@ -160,7 +145,7 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
       {/* Day cards */}
       <div className="content-area px-4 py-3 space-y-2">
         {dates.map((date, idx) => {
-          const day      = (days ?? []).find(d => d.date === date)
+          const day      = days.find(d => d.date === date)
           const conflict = day ? hasConflict(day, dishMap) : false
           const today    = isToday(date)
 
@@ -185,7 +170,7 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
               className="list-item w-full text-left flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] transition-transform"
               style={{
                 '--i': idx,
-                background: 'white',
+                background: 'var(--surface)',
                 border: `1.5px solid ${conflict ? '#F5C0A4' : today ? 'var(--brand)' : 'var(--cream-border)'}`,
                 boxShadow: today ? '0 2px 10px rgba(47,29,27,0.14)' : '0 1px 3px rgba(47,29,27,0.06)',
               } as React.CSSProperties}
