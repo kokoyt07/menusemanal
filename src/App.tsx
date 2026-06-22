@@ -4,7 +4,7 @@ import { useAuth } from './hooks/useAuth'
 import { DataProvider } from './contexts/DataContext'
 import { supabase } from './lib/supabase'
 import ToastContainer from './components/ToastContainer'
-import { Calendar, Utensils, ShoppingBag, Clock, Settings } from './components/Icon'
+import { Calendar, Utensils, ShoppingBag, Clock, Settings, UserCircle } from './components/Icon'
 import AuthScreen from './views/AuthScreen'
 import WelcomeScreen from './views/WelcomeScreen'
 import WeeklyMenuView from './views/WeeklyMenuView'
@@ -13,6 +13,7 @@ import DishesView from './views/DishesView'
 import ShoppingListView from './views/ShoppingListView'
 import HistoryView from './views/HistoryView'
 import SettingsView from './views/SettingsView'
+import ProfileView from './views/ProfileView'
 
 type Screen =
   | { type: 'welcome'; step?: 'tutorial' | 'install' }
@@ -25,6 +26,7 @@ const TABS: { id: Tab; Icon: IconFC; label: string }[] = [
   { id: 'platos',    Icon: Utensils,    label: 'Platos' },
   { id: 'lista',     Icon: ShoppingBag, label: 'Lista' },
   { id: 'historial', Icon: Clock,       label: 'Historial' },
+  { id: 'perfil',    Icon: UserCircle,  label: 'Perfil' },
   { id: 'ajustes',   Icon: Settings,    label: 'Ajustes' },
 ]
 const TAB_TITLE: Record<Tab, string> = {
@@ -32,6 +34,7 @@ const TAB_TITLE: Record<Tab, string> = {
   platos:    'Mis Platos',
   lista:     'Lista de la Compra',
   historial: 'Historial',
+  perfil:    'Mi Perfil',
   ajustes:   'Ajustes',
 }
 
@@ -111,6 +114,7 @@ export default function App() {
             {tab === 'platos'    && <DishesView />}
             {tab === 'lista'     && <ShoppingListView userId={user.id} />}
             {tab === 'historial' && <HistoryView userId={user.id} />}
+            {tab === 'perfil'    && <ProfileView user={user} />}
             {tab === 'ajustes'   && (
               <SettingsView
                 userId={user.id}

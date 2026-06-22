@@ -237,3 +237,26 @@ export const Info = (p: P) => (
     <line x1="12" y1="8" x2="12.01" y2="8"/>
   </I>
 )
+
+export const UserCircle = (p: P) => (
+  <I {...p}>
+    <circle cx="12" cy="12" r="10"/>
+    <circle cx="12" cy="10" r="3"/>
+    <path d="M7 20.662V19a2 2 0 012-2h6a2 2 0 012 2v1.662"/>
+  </I>
+)
+
+export const Mail = (p: P) => (
+  <I {...p}>
+    <rect x="2" y="4" width="20" height="16" rx="2"/>
+    <polyline points="2 4 12 13 22 4"/>
+  </I>
+)
+
+export const Key = (p: P) => (
+  <I {...p}>
+    <circle cx="7.5" cy="15.5" r="5.5"/>
+    <path d="M21 2l-9.6 9.6"/>
+    <path d="M15.5 7.5l3 3L22 7l-3-3"/>
+  </I>
+)
