@@ -8,3 +8,13 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>
 )
+
+// Fade out the static HTML loader once React has painted
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    const loader = document.getElementById('app-loader')
+    if (!loader) return
+    loader.classList.add('fade-out')
+    setTimeout(() => loader.remove(), 320)
+  })
+})

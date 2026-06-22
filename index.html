@@ -2,18 +2,74 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="icon" type="image/png" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#3B82F6" />
+    <meta name="theme-color" content="#2F1D1B" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Menús" />
-    <title>Menús Semanales</title>
+    <title>Menús Semanales · TuCocinaApp</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: #F8F6F3; }
+
+      #app-loader {
+        position: fixed; inset: 0;
+        background: #F8F6F3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        gap: 18px;
+        transition: opacity 0.3s ease;
+      }
+      #app-loader.fade-out { opacity: 0; pointer-events: none; }
+
+      #app-loader img {
+        width: 84px; height: 84px;
+        border-radius: 20px;
+        box-shadow: 0 8px 24px rgba(47,29,27,0.16), 0 2px 6px rgba(47,29,27,0.08);
+        animation: ldr-pulse 1.8s ease-in-out infinite;
+      }
+      @keyframes ldr-pulse {
+        0%, 100% { transform: scale(1);     opacity: 0.92; }
+        50%       { transform: scale(1.05); opacity: 1;    }
+      }
+      #app-loader .ldr-name {
+        font-family: 'Inter', -apple-system, sans-serif;
+        font-size: 10px; font-weight: 700;
+        letter-spacing: 0.22em;
+        color: #AFA59A;
+        text-transform: uppercase;
+      }
+      .ldr-dots { display: flex; gap: 5px; }
+      .ldr-dots span {
+        width: 5px; height: 5px; border-radius: 50%;
+        background: #2F1D1B;
+        animation: ldr-dot 1.3s ease-in-out infinite;
+      }
+      .ldr-dots span:nth-child(2) { animation-delay: 0.18s; }
+      .ldr-dots span:nth-child(3) { animation-delay: 0.36s; }
+      @keyframes ldr-dot {
+        0%, 80%, 100% { transform: scale(0.55); opacity: 0.3; }
+        40%            { transform: scale(1);    opacity: 1;   }
+      }
+    </style>
   </head>
   <body>
+    <div id="app-loader">
+      <img src="/icon-192.png" alt="TuCocinaApp" />
+      <p class="ldr-name">TuCocinaApp</p>
+      <div class="ldr-dots"><span></span><span></span><span></span></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

@@ -7,13 +7,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg'],
+      includeAssets: ['icon-192.png', 'icon-512.png', 'logo.png'],
       manifest: {
         name: 'Menús Semanales',
         short_name: 'Menús',
         description: 'Planificador de menús semanales de comida y cena',
-        theme_color: '#3B82F6',
-        background_color: '#F9FAFB',
+        theme_color: '#2F1D1B',
+        background_color: '#F8F6F3',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -23,7 +23,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
       },
     }),
   ],

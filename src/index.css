@@ -2,98 +2,145 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Brand tokens ──────────────────────────────────────────────────────────── */
 :root {
   color-scheme: light;
+  --brand:        #2F1D1B;
+  --brand-hover:  #3D2421;
+  --brand-soft:   #F3E7E4;
+  --cream:        #F8F6F3;
+  --cream-border: #EDE9E3;
+  --shadow-color: rgba(47,29,27,0.08);
 }
 
-* {
-  -webkit-tap-highlight-color: transparent;
+/* ── Base ──────────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body, #root {
   height: 100%;
   height: 100dvh;
   overflow: hidden;
+  background: var(--cream);
 }
 
 body {
   overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--brand);
 }
 
-/* Prevent iOS zoom on focus (requires font-size >= 16px on inputs) */
-input, textarea, select {
-  font-size: 16px !important;
-}
+input, textarea, select { font-size: 16px !important; }
 
-/* Safe area padding helpers */
+/* ── Safe area ─────────────────────────────────────────────────────────────── */
 .pt-safe { padding-top:    env(safe-area-inset-top,    0px); }
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
-/* Generic scrollable flex child — fills remaining space in a flex column */
+/* ── Layout ────────────────────────────────────────────────────────────────── */
 .content-area {
-  flex: 1;
-  min-height: 0;          /* critical: lets flex child shrink below its content height */
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Tab bar: fixed height + iPhone home bar */
-.tab-bar-height {
-  flex-shrink: 0;
-  height: calc(64px + env(safe-area-inset-bottom, 0px));
-}
-
-/* Full-screen overlay screens (DayMenuView, HistoryDetail) */
-.screen-full {
-  position: fixed;
-  inset: 0;
-  background: #F9FAFB;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-  overflow: hidden;
-}
-
-/* Scrollable body inside a screen-full */
-.screen-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Bottom sheet overlay */
-.sheet-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 40;
-  display: flex;
-  align-items: flex-end;
+.tab-bar-height {
+  flex-shrink: 0;
+  height: calc(62px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Bottom sheet panel */
+.screen-full {
+  position: fixed; inset: 0;
+  background: var(--cream);
+  z-index: 20;
+  display: flex; flex-direction: column;
+  height: 100dvh; overflow: hidden;
+}
+
+.screen-scroll {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Bottom sheet ──────────────────────────────────────────────────────────── */
+.sheet-overlay {
+  position: fixed; inset: 0;
+  background: rgba(47,29,27,0.40);
+  z-index: 40;
+  display: flex; align-items: flex-end;
+}
+
 .sheet-content {
   width: 100%;
   background: white;
-  border-radius: 20px 20px 0 0;
+  border-radius: 24px 24px 0 0;
   max-height: 92dvh;
-  display: flex;
-  flex-direction: column;
+  display: flex; flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Scrollable list inside a sheet */
 .sheet-list {
-  flex: 1;
-  min-height: 0;
+  flex: 1; min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Category / filter badge */
+/* ── Reusable components ───────────────────────────────────────────────────── */
 .chip {
   @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
 }
+
+/* Cards */
+.card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid var(--cream-border);
+  box-shadow: 0 2px 6px var(--shadow-color), 0 1px 2px rgba(47,29,27,0.03);
+  overflow: hidden;
+}
+
+/* Primary action button */
+.btn-primary {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 15px;
+  background: var(--brand); color: white;
+  font-weight: 600; font-size: 16px;
+  border-radius: 16px;
+  transition: opacity 0.15s;
+}
+.btn-primary:active   { opacity: 0.82; }
+.btn-primary:disabled { opacity: 0.38; pointer-events: none; }
+
+/* Secondary ghost button */
+.btn-ghost {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 15px;
+  background: var(--brand-soft); color: var(--brand);
+  font-weight: 600; font-size: 16px;
+  border-radius: 16px;
+  transition: opacity 0.15s;
+}
+.btn-ghost:active { opacity: 0.78; }
+
+/* Section label */
+.section-label {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #AFA59A;
+}
+
+/* Toggle switch */
+.toggle-track {
+  @apply w-11 h-6 rounded-full transition-colors duration-200;
+  background: #D9D2CA;
+}
+.toggle-track.on { background: var(--brand); }
+.toggle-thumb {
+  @apply absolute top-0.5 left-[2px] bg-white rounded-full h-5 w-5 transition-transform duration-200 shadow-sm;
+}
+.toggle-thumb.on { transform: translateX(20px); }
