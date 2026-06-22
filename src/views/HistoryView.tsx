@@ -6,32 +6,39 @@ import { getDishIdsFromDay } from '../types'
 import { weekRangeLabel, addWeeks, fullDayTitle } from '../utils/dateUtils'
 import { exportAndSharePDF } from '../utils/pdfExporter'
 import { showToast } from '../utils/toast'
+import { Calendar, ChevronLeft, ChevronRight, Sun, Moon, Copy, Trash, Share } from '../components/Icon'
 
-interface Props {
-  onMenuOpen: (menuId: string) => void
-}
+interface Props { onMenuOpen: (menuId: string) => void }
 
 export default function HistoryView({ onMenuOpen }: Props) {
   const menus = useLiveQuery(() =>
     db.menus.orderBy('weekStartDate').reverse().toArray()
   )
 
-  if (!menus) return <div className="flex-1 flex items-center justify-center min-h-0"><p className="text-gray-400">Cargando…</p></div>
+  if (!menus) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-0">
+        <p style={{ color: '#AFA59A' }}>Cargando…</p>
+      </div>
+    )
+  }
 
   if (menus.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center flex-1 min-h-0 text-gray-400 px-8 text-center">
-        <p className="text-5xl mb-4">📅</p>
-        <p className="font-medium text-gray-600 mb-1">Sin historial</p>
-        <p className="text-sm">Los menús que planifiques aparecerán aquí</p>
+      <div className="flex flex-col items-center justify-center flex-1 min-h-0 px-8 text-center">
+        <Calendar size={44} sw={1.25} style={{ color: '#D9D2CA', marginBottom: 16 }} />
+        <p className="font-semibold text-sm" style={{ color: 'var(--brand)' }}>Sin historial</p>
+        <p className="text-sm mt-1" style={{ color: '#AFA59A' }}>Los menus que planifiques aparecerán aqui</p>
       </div>
     )
   }
 
   return (
-    <div className="content-area px-4 pt-4 space-y-3">
-      {menus.map(menu => (
-        <HistoryMenuCard key={menu.id} menu={menu} onOpen={() => onMenuOpen(menu.id)} />
+    <div className="content-area px-4 pt-4 space-y-2.5">
+      {menus.map((menu, idx) => (
+        <div key={menu.id} className="list-item" style={{ '--i': idx } as React.CSSProperties}>
+          <HistoryMenuCard menu={menu} onOpen={() => onMenuOpen(menu.id)} />
+        </div>
       ))}
       <div className="h-4" />
     </div>
@@ -46,7 +53,7 @@ function HistoryMenuCard({ menu, onOpen }: { menu: WeeklyMenu; onOpen: () => voi
   async function duplicate() {
     const nextStart = addWeeks(menu.weekStartDate, 1)
     const existing = await db.menus.where('weekStartDate').equals(nextStart).first()
-    if (existing) { showToast('Ya existe un menú para esa semana', 'info'); return }
+    if (existing) { showToast('Ya existe un menu para esa semana', 'info'); return }
 
     const newMenuId = crypto.randomUUID()
     await db.menus.add({ id: newMenuId, weekStartDate: nextStart })
@@ -63,35 +70,50 @@ function HistoryMenuCard({ menu, onOpen }: { menu: WeeklyMenu; onOpen: () => voi
   async function deleteMenu() {
     await db.days.bulkDelete((days ?? []).map(d => d.id))
     await db.menus.delete(menu.id)
-    showToast('Menú eliminado')
+    showToast('Menu eliminado')
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <button onClick={onOpen} className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-gray-50">
+    <div className="rounded-2xl overflow-hidden"
+      style={{ background: 'white', border: '1px solid var(--cream-border)',
+               boxShadow: '0 1px 4px rgba(47,29,27,0.06)' }}>
+      <button onClick={onOpen} className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:opacity-75">
         <div className="flex-1">
-          <p className="font-semibold text-gray-900">{weekRangeLabel(menu.weekStartDate)}</p>
-          <p className="text-sm text-gray-400 mt-0.5">{filled} día(s) planificados</p>
+          <p className="font-bold text-sm" style={{ color: 'var(--brand)' }}>{weekRangeLabel(menu.weekStartDate)}</p>
+          <p className="text-xs mt-0.5" style={{ color: '#AFA59A' }}>{filled} dia(s) planificados</p>
         </div>
-        <span className="text-gray-300">›</span>
+        <ChevronRight size={16} style={{ color: '#D9D2CA' }} />
       </button>
 
       {confirmDelete ? (
-        <div className="flex items-center justify-between px-4 py-2.5 bg-red-50 border-t border-red-100">
-          <p className="text-xs text-red-700 font-medium">¿Eliminar este menú?</p>
+        <div className="flex items-center justify-between px-4 py-2.5 border-t anim-scale"
+          style={{ background: '#FEF3EE', borderColor: '#F5C0A4' }}>
+          <p className="text-xs font-medium" style={{ color: '#8B4513' }}>Eliminar este menu?</p>
           <div className="flex gap-2">
-            <button onClick={deleteMenu} className="px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded-lg">Sí</button>
-            <button onClick={() => setConfirmDelete(false)} className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg">No</button>
+            <button onClick={deleteMenu}
+              className="px-3 py-1 rounded-lg text-xs font-semibold text-white"
+              style={{ background: '#C0392B' }}>
+              Eliminar
+            </button>
+            <button onClick={() => setConfirmDelete(false)}
+              className="px-3 py-1 rounded-lg text-xs font-semibold"
+              style={{ background: 'var(--cream)', color: 'var(--brand)' }}>
+              Cancelar
+            </button>
           </div>
         </div>
       ) : (
-        <div className="flex border-t border-gray-100">
-          <button onClick={duplicate} className="flex-1 py-2.5 text-xs text-blue-500 font-medium active:bg-gray-50">
-            Duplicar semana →
+        <div className="flex border-t" style={{ borderColor: 'var(--cream-border)' }}>
+          <button onClick={duplicate}
+            className="flex-1 py-2.5 flex items-center justify-center gap-1.5 text-xs font-semibold active:opacity-60"
+            style={{ color: 'var(--brand)' }}>
+            <Copy size={13} /><span>Duplicar semana</span>
           </button>
-          <div className="w-px bg-gray-100" />
-          <button onClick={() => setConfirmDelete(true)} className="flex-1 py-2.5 text-xs text-red-400 font-medium active:bg-gray-50">
-            Eliminar
+          <div className="w-px" style={{ background: 'var(--cream-border)' }} />
+          <button onClick={() => setConfirmDelete(true)}
+            className="flex-1 py-2.5 flex items-center justify-center gap-1.5 text-xs font-semibold active:opacity-60"
+            style={{ color: '#C0392B' }}>
+            <Trash size={13} /><span>Eliminar</span>
           </button>
         </div>
       )}
@@ -99,18 +121,14 @@ function HistoryMenuCard({ menu, onOpen }: { menu: WeeklyMenu; onOpen: () => voi
   )
 }
 
-// ─── Full-screen detail ───────────────────────────────────────────────────────
-
-interface DetailProps {
-  menuId: string
-  onBack: () => void
-}
+/* ── Full-screen detail ───────────────────────────────────────────────────── */
+interface DetailProps { menuId: string; onBack: () => void }
 
 export function HistoryDetailView({ menuId, onBack }: DetailProps) {
   const [exporting, setExporting] = useState(false)
 
-  const menu  = useLiveQuery(() => db.menus.get(menuId), [menuId])
-  const days  = useLiveQuery(() => db.days.where('menuId').equals(menuId).toArray(), [menuId])
+  const menu = useLiveQuery(() => db.menus.get(menuId), [menuId])
+  const days = useLiveQuery(() => db.days.where('menuId').equals(menuId).toArray(), [menuId])
 
   const allDishIds = (days ?? []).flatMap(d => getDishIdsFromDay(d))
   const dishes = useLiveQuery(
@@ -122,11 +140,8 @@ export function HistoryDetailView({ menuId, onBack }: DetailProps) {
   async function doExport() {
     if (!menu || !days) return
     setExporting(true)
-    try {
-      await exportAndSharePDF(menu, days, dishMap)
-    } finally {
-      setExporting(false)
-    }
+    try { await exportAndSharePDF(menu, days, dishMap) }
+    finally { setExporting(false) }
   }
 
   if (!menu) return null
@@ -134,54 +149,53 @@ export function HistoryDetailView({ menuId, onBack }: DetailProps) {
 
   return (
     <div className="screen-full">
-      <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100 flex-shrink-0 pt-safe">
-        <button onClick={onBack} className="flex items-center gap-1 text-blue-600 font-medium active:opacity-60">
-          <span className="text-xl">‹</span>
-          <span className="text-sm">Historial</span>
+      <div className="flex items-center gap-3 px-4 py-3 bg-white border-b flex-shrink-0 pt-safe"
+        style={{ borderColor: 'var(--cream-border)' }}>
+        <button onClick={onBack}
+          className="flex items-center gap-1 font-semibold text-sm active:opacity-60"
+          style={{ color: 'var(--brand)' }}>
+          <ChevronLeft size={20} /><span>Historial</span>
         </button>
         <div className="flex-1 text-center">
-          <p className="font-semibold text-gray-900 text-sm">{weekRangeLabel(menu.weekStartDate)}</p>
+          <p className="font-bold text-sm" style={{ color: 'var(--brand)' }}>{weekRangeLabel(menu.weekStartDate)}</p>
         </div>
-        <button
-          onClick={doExport}
-          disabled={exporting}
-          className="text-blue-500 text-sm font-medium disabled:opacity-40"
-        >
-          {exporting ? '…' : 'PDF'}
+        <button onClick={doExport} disabled={exporting}
+          className="flex items-center gap-1.5 text-sm font-semibold active:opacity-60 disabled:opacity-40"
+          style={{ color: 'var(--brand)' }}>
+          <Share size={14} /><span>{exporting ? '…' : 'PDF'}</span>
         </button>
       </div>
 
-      <div className="screen-scroll px-4 py-4 space-y-3">
-        {sorted.map(day => {
-          const getLunchNames = () => {
+      <div className="screen-scroll px-4 py-4 space-y-2.5">
+        {sorted.map((day, idx) => {
+          const lunchNames = (() => {
             const ids = day.lunchMode === 'primeroYSegundo'
-              ? [day.firstLunchDishId, day.secondLunchDishId]
-              : [day.singleLunchDishId]
+              ? [day.firstLunchDishId, day.secondLunchDishId] : [day.singleLunchDishId]
             return ids.filter(Boolean).map(id => dishMap.get(id!)?.name).filter(Boolean).join(' · ') || '—'
-          }
-          const getDinnerNames = () => {
+          })()
+          const dinnerNames = (() => {
             const ids = day.dinnerMode === 'primeroYSegundo'
-              ? [day.firstDinnerDishId, day.secondDinnerDishId]
-              : [day.singleDinnerDishId]
+              ? [day.firstDinnerDishId, day.secondDinnerDishId] : [day.singleDinnerDishId]
             return ids.filter(Boolean).map(id => dishMap.get(id!)?.name).filter(Boolean).join(' · ') || '—'
-          }
+          })()
+
           return (
-            <div key={day.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-2">
-              <p className="font-semibold text-gray-800 text-sm">{fullDayTitle(day.date)}</p>
+            <div key={day.id} className="card p-4 list-item" style={{ '--i': idx } as React.CSSProperties}>
+              <p className="font-bold text-sm mb-2.5" style={{ color: 'var(--brand)' }}>{fullDayTitle(day.date)}</p>
               {day.hasLunch && (
-                <div className="flex items-start gap-2">
-                  <span className="text-orange-400 text-xs mt-0.5 flex-shrink-0">☀</span>
-                  <p className="text-sm text-gray-600">{getLunchNames()}</p>
+                <div className="flex items-start gap-2 mb-1.5">
+                  <Sun size={13} style={{ color: '#D4A017', flexShrink: 0, marginTop: 1 }} />
+                  <p className="text-sm" style={{ color: 'var(--brand)' }}>{lunchNames}</p>
                 </div>
               )}
               {day.hasDinner && (
                 <div className="flex items-start gap-2">
-                  <span className="text-indigo-400 text-xs mt-0.5 flex-shrink-0">☽</span>
-                  <p className="text-sm text-gray-600">{getDinnerNames()}</p>
+                  <Moon size={13} style={{ color: '#7C6FA0', flexShrink: 0, marginTop: 1 }} />
+                  <p className="text-sm" style={{ color: 'var(--brand)' }}>{dinnerNames}</p>
                 </div>
               )}
               {!day.hasLunch && !day.hasDinner && (
-                <p className="text-sm text-gray-400">Día libre</p>
+                <p className="text-sm" style={{ color: '#C8C0B5' }}>Dia libre</p>
               )}
             </div>
           )

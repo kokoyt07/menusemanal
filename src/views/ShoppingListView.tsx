@@ -5,6 +5,7 @@ import type { Dish } from '../types'
 import { getDishIdsFromDay } from '../types'
 import { currentWeekStart, addWeeks, weekDates, weekRangeLabel, isCurrentWeek, fullDayTitle } from '../utils/dateUtils'
 import { showToast } from '../utils/toast'
+import { ChevronLeft, ChevronRight, ShoppingBag, Share } from '../components/Icon'
 
 export default function ShoppingListView() {
   const [weekStart, setWeekStart] = useState(currentWeekStart)
@@ -25,7 +26,6 @@ export default function ShoppingListView() {
 
   const dishMap = new Map<string, Dish>((dishes ?? []).map(d => [d.id, d]))
 
-  // Group dishes by category
   const grouped = new Map<string, { catName: string; dishes: Array<{ dish: Dish; dayLabel: string }> }>()
   const uncategorized: Array<{ dish: Dish; dayLabel: string }> = []
 
@@ -56,100 +56,104 @@ export default function ShoppingListView() {
   }).length
 
   async function shareAsText() {
-    const lines: string[] = [`🛒 Lista de la compra — ${weekRangeLabel(weekStart)}`, '']
+    const lines: string[] = [`Lista de la compra — ${weekRangeLabel(weekStart)}`, '']
 
     for (const [, { catName, dishes: items }] of grouped) {
-      lines.push(`📌 ${catName.toUpperCase()}`)
-      // Deduplicate dish names
+      lines.push(catName.toUpperCase())
       const seen = new Set<string>()
       for (const { dish } of items) {
         if (!seen.has(dish.name)) {
           seen.add(dish.name)
           const count = items.filter(i => i.dish.name === dish.name).length
-          lines.push(`• ${dish.name}${count > 1 ? ` (×${count})` : ''}`)
+          lines.push(`  • ${dish.name}${count > 1 ? ` (x${count})` : ''}`)
         }
       }
       lines.push('')
     }
     if (uncategorized.length > 0) {
-      lines.push('📌 OTROS')
+      lines.push('OTROS')
       const seen = new Set<string>()
       for (const { dish } of uncategorized) {
-        if (!seen.has(dish.name)) { seen.add(dish.name); lines.push(`• ${dish.name}`) }
+        if (!seen.has(dish.name)) { seen.add(dish.name); lines.push(`  • ${dish.name}`) }
       }
     }
 
     const text = lines.join('\n').trim()
     try {
-      if (navigator.share) {
-        await navigator.share({ title: 'Lista de la compra', text })
-      } else {
-        await navigator.clipboard.writeText(text)
-        showToast('Copiado al portapapeles')
-      }
-    } catch {
-      showToast('No se pudo compartir', 'error')
-    }
+      if (navigator.share) await navigator.share({ title: 'Lista de la compra', text })
+      else { await navigator.clipboard.writeText(text); showToast('Copiado al portapapeles') }
+    } catch { /* cancelled */ }
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-gray-50">
+    <div className="flex flex-col flex-1 min-h-0" style={{ background: 'var(--cream)' }}>
       {/* Week navigator */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 flex-shrink-0">
-        <button
-          onClick={() => setWeekStart(w => addWeeks(w, -1))}
-          className="w-10 h-10 flex items-center justify-center rounded-full active:bg-gray-100 text-blue-600 text-xl font-semibold"
-        >‹</button>
-        <div className="text-center">
-          <p className="font-semibold text-gray-900">{weekRangeLabel(weekStart)}</p>
+      <div className="flex items-center gap-2 px-4 py-3 bg-white border-b flex-shrink-0"
+        style={{ borderColor: 'var(--cream-border)' }}>
+        <button onClick={() => setWeekStart(w => addWeeks(w, -1))}
+          className="w-10 h-10 flex items-center justify-center rounded-full active:opacity-60 flex-shrink-0"
+          style={{ color: 'var(--brand)' }}>
+          <ChevronLeft size={22} />
+        </button>
+        <div className="flex-1 text-center">
+          <p className="font-bold text-sm" style={{ color: 'var(--brand)' }}>{weekRangeLabel(weekStart)}</p>
           {isCurrentWeek(weekStart)
-            ? <p className="text-xs text-blue-500 font-medium">Esta semana</p>
-            : <button onClick={() => setWeekStart(currentWeekStart())} className="text-xs text-blue-500 underline">Ir a hoy</button>
+            ? <p className="text-xs font-semibold" style={{ color: '#AFA59A' }}>Esta semana</p>
+            : <button onClick={() => setWeekStart(currentWeekStart())}
+                className="text-xs font-semibold underline" style={{ color: '#AFA59A' }}>
+                Ir a hoy
+              </button>
           }
         </div>
-        <button
-          onClick={() => setWeekStart(w => addWeeks(w, 1))}
-          className="w-10 h-10 flex items-center justify-center rounded-full active:bg-gray-100 text-blue-600 text-xl font-semibold"
-        >›</button>
+        <button onClick={() => setWeekStart(w => addWeeks(w, 1))}
+          className="w-10 h-10 flex items-center justify-center rounded-full active:opacity-60 flex-shrink-0"
+          style={{ color: 'var(--brand)' }}>
+          <ChevronRight size={22} />
+        </button>
       </div>
 
       {/* Share bar */}
-      <div className="px-4 py-2 bg-white border-b border-gray-100 flex-shrink-0">
-        <button
-          onClick={shareAsText}
-          disabled={totalDishes === 0}
-          className="w-full py-2 rounded-xl bg-green-50 text-green-600 text-sm font-medium active:bg-green-100 disabled:opacity-40 flex items-center justify-center gap-1.5"
-        >
-          <span>↑</span><span>Compartir lista de la compra</span>
+      <div className="px-4 py-2.5 bg-white border-b flex-shrink-0"
+        style={{ borderColor: 'var(--cream-border)' }}>
+        <button onClick={shareAsText} disabled={totalDishes === 0}
+          className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:opacity-75 disabled:opacity-40"
+          style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
+          <Share size={14} /><span>Compartir lista de la compra</span>
         </button>
       </div>
 
       {/* Content */}
-      <div className="content-area px-4 py-4 space-y-4">
+      <div className="content-area px-4 py-4 space-y-3">
         {totalDishes === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-gray-400 text-center">
-            <p className="text-4xl mb-3">🛒</p>
-            <p className="text-sm font-medium text-gray-500">Sin menú esta semana</p>
-            <p className="text-xs mt-1">Planifica los días para ver la lista</p>
+          <div className="flex flex-col items-center justify-center h-48 text-center">
+            <ShoppingBag size={44} sw={1.25} style={{ color: '#D9D2CA', marginBottom: 12 }} />
+            <p className="text-sm font-semibold" style={{ color: 'var(--brand)' }}>Sin menu esta semana</p>
+            <p className="text-xs mt-1" style={{ color: '#AFA59A' }}>Planifica los dias para ver la lista</p>
           </div>
         ) : (
           <>
-            {[...grouped.entries()].map(([cid, { catName, dishes: items }]) => {
+            {[...grouped.entries()].map(([cid, { catName, dishes: items }], idx) => {
               const seen = new Set<string>()
               const unique = items.filter(({ dish }) => !seen.has(dish.name) && seen.add(dish.name))
               return (
-                <div key={cid} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{catName}</p>
+                <div key={cid} className="rounded-2xl overflow-hidden list-item"
+                  style={{ '--i': idx, background: 'white', border: '1px solid var(--cream-border)',
+                           boxShadow: '0 1px 4px rgba(47,29,27,0.06)' } as React.CSSProperties}>
+                  <div className="px-4 py-2.5 border-b" style={{ background: 'var(--cream)', borderColor: 'var(--cream-border)' }}>
+                    <p className="section-label">{catName}</p>
                   </div>
-                  <ul className="divide-y divide-gray-50">
-                    {unique.map(({ dish }) => {
-                      const count = items.filter(i => i.dish.name === dish.name).length
+                  <ul>
+                    {unique.map(({ dish }, i) => {
+                      const count = items.filter(x => x.dish.name === dish.name).length
                       return (
-                        <li key={dish.id} className="flex items-center justify-between px-4 py-3">
-                          <span className="text-sm text-gray-800">{dish.name}</span>
+                        <li key={dish.id} className="flex items-center justify-between px-4 py-3"
+                          style={{ borderTop: i > 0 ? '1px solid var(--cream-border)' : undefined }}>
+                          <span className="text-sm font-medium" style={{ color: 'var(--brand)' }}>{dish.name}</span>
                           {count > 1 && (
-                            <span className="text-xs bg-blue-50 text-blue-500 font-medium px-2 py-0.5 rounded-full">×{count}</span>
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                              style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
+                              x{count}
+                            </span>
                           )}
                         </li>
                       )
@@ -158,17 +162,21 @@ export default function ShoppingListView() {
                 </div>
               )
             })}
+
             {uncategorized.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Otros</p>
+              <div className="rounded-2xl overflow-hidden"
+                style={{ background: 'white', border: '1px solid var(--cream-border)',
+                         boxShadow: '0 1px 4px rgba(47,29,27,0.06)' }}>
+                <div className="px-4 py-2.5 border-b" style={{ background: 'var(--cream)', borderColor: 'var(--cream-border)' }}>
+                  <p className="section-label">Otros</p>
                 </div>
-                <ul className="divide-y divide-gray-50">
+                <ul>
                   {uncategorized.filter(({ dish }, i, arr) =>
                     arr.findIndex(x => x.dish.name === dish.name) === i
-                  ).map(({ dish }) => (
-                    <li key={dish.id} className="px-4 py-3">
-                      <span className="text-sm text-gray-800">{dish.name}</span>
+                  ).map(({ dish }, i) => (
+                    <li key={dish.id} className="px-4 py-3 text-sm font-medium"
+                      style={{ color: 'var(--brand)', borderTop: i > 0 ? '1px solid var(--cream-border)' : undefined }}>
+                      {dish.name}
                     </li>
                   ))}
                 </ul>

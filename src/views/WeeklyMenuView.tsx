@@ -8,6 +8,7 @@ import { hasConflict } from '../utils/validationUtils'
 import { getDishIdsFromDay } from '../types'
 import { autoFillWeek } from '../utils/autoFill'
 import { showToast } from '../utils/toast'
+import { ChevronLeft, ChevronRight, Sun, Moon, FileText, AlertTriangle, Zap, Share } from '../components/Icon'
 
 interface Props {
   onDayTap: (date: string, weekStart: string) => void
@@ -45,27 +46,27 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
 
   async function handleShare() {
     const dayList = days ?? []
-    const lines: string[] = [`📅 ${weekRangeLabel(weekStart)}`, '']
+    const lines: string[] = [`Semana ${weekRangeLabel(weekStart)}`, '']
     for (const date of dates) {
       const day = dayList.find(d => d.date === date)
       if (!day) continue
       lines.push(fullDayTitle(date).toUpperCase())
       if (day.hasLunch) {
         const ids   = day.lunchMode === 'primeroYSegundo' ? [day.firstLunchDishId, day.secondLunchDishId] : [day.singleLunchDishId]
-        const names = ids.filter(Boolean).map(id => dishMap.get(id!)?.name).filter(Boolean).join(' · ') || '—'
-        lines.push(`☀ Comida: ${names}`)
+        const names = ids.filter(Boolean).map(id => dishMap.get(id!)?.name).filter(Boolean).join(' + ') || '—'
+        lines.push(`  Comida: ${names}`)
       }
       if (day.hasDinner) {
         const ids   = day.dinnerMode === 'primeroYSegundo' ? [day.firstDinnerDishId, day.secondDinnerDishId] : [day.singleDinnerDishId]
-        const names = ids.filter(Boolean).map(id => dishMap.get(id!)?.name).filter(Boolean).join(' · ') || '—'
-        lines.push(`☽ Cena: ${names}`)
+        const names = ids.filter(Boolean).map(id => dishMap.get(id!)?.name).filter(Boolean).join(' + ') || '—'
+        lines.push(`  Cena: ${names}`)
       }
-      if (day.notes) lines.push(`📝 ${day.notes}`)
+      if (day.notes) lines.push(`  Nota: ${day.notes}`)
       lines.push('')
     }
     const text = lines.join('\n').trim()
     try {
-      if (navigator.share) await navigator.share({ title: 'Menú semanal', text })
+      if (navigator.share) await navigator.share({ title: 'Menu semanal', text })
       else { await navigator.clipboard.writeText(text); showToast('Copiado al portapapeles') }
     } catch { /* cancelled */ }
   }
@@ -77,8 +78,10 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
       <div className="flex items-center gap-2 px-4 py-3 bg-white border-b flex-shrink-0"
         style={{ borderColor: 'var(--cream-border)' }}>
         <button onClick={() => setWeekStart(w => addWeeks(w, -1))}
-          className="w-10 h-10 flex items-center justify-center rounded-full active:opacity-60 text-xl font-bold flex-shrink-0"
-          style={{ color: 'var(--brand)' }}>‹</button>
+          className="w-10 h-10 flex items-center justify-center rounded-full active:opacity-60 flex-shrink-0"
+          style={{ color: 'var(--brand)' }}>
+          <ChevronLeft size={22} />
+        </button>
 
         <div className="flex-1 text-center">
           <p className="font-bold text-sm" style={{ color: 'var(--brand)' }}>{weekRangeLabel(weekStart)}</p>
@@ -92,28 +95,33 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
         </div>
 
         <button onClick={() => setWeekStart(w => addWeeks(w, 1))}
-          className="w-10 h-10 flex items-center justify-center rounded-full active:opacity-60 text-xl font-bold flex-shrink-0"
-          style={{ color: 'var(--brand)' }}>›</button>
+          className="w-10 h-10 flex items-center justify-center rounded-full active:opacity-60 flex-shrink-0"
+          style={{ color: 'var(--brand)' }}>
+          <ChevronRight size={22} />
+        </button>
       </div>
 
       {/* Action bar */}
       <div className="px-4 py-2.5 bg-white border-b flex gap-2 flex-shrink-0"
         style={{ borderColor: 'var(--cream-border)' }}>
         <button onClick={handleAutoFill} disabled={filling}
-          className="flex-1 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 active:opacity-75 disabled:opacity-40"
+          className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:opacity-75 disabled:opacity-40"
           style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
-          {filling ? <span className="animate-pulse">Rellenando…</span> : <><span>⚡</span><span>Rellenar semana</span></>}
+          {filling
+            ? <span style={{ animation: 'pulse-soft 1.2s ease infinite' }}>Rellenando…</span>
+            : <><Zap size={14} /><span>Rellenar semana</span></>
+          }
         </button>
         <button onClick={handleShare}
-          className="py-2 px-4 rounded-xl text-sm font-semibold flex items-center gap-1.5 active:opacity-75"
-          style={{ background: 'var(--cream)', color: 'var(--brand)' }}>
-          <span>↑</span><span>Compartir</span>
+          className="py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center gap-1.5 active:opacity-75"
+          style={{ background: 'var(--cream)', color: 'var(--brand)', border: '1px solid var(--cream-border)' }}>
+          <Share size={14} /><span>Compartir</span>
         </button>
       </div>
 
       {/* Day cards */}
       <div className="content-area px-4 py-3 space-y-2">
-        {dates.map(date => {
+        {dates.map((date, idx) => {
           const day      = (days ?? []).find(d => d.date === date)
           const conflict = day ? hasConflict(day, dishMap) : false
           const today    = isToday(date)
@@ -136,20 +144,21 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
             <button
               key={date}
               onClick={() => onDayTap(date, weekStart)}
-              className="w-full text-left flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] transition-transform"
+              className="list-item w-full text-left flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] transition-transform"
               style={{
+                '--i': idx,
                 background: 'white',
                 border: `1.5px solid ${conflict ? '#F5C0A4' : today ? 'var(--brand)' : 'var(--cream-border)'}`,
                 boxShadow: today
-                  ? '0 2px 8px rgba(47,29,27,0.12)'
+                  ? '0 2px 10px rgba(47,29,27,0.14)'
                   : '0 1px 3px rgba(47,29,27,0.06)',
-              }}
+              } as React.CSSProperties}
             >
               {/* Date badge */}
               <div className="flex-shrink-0 w-12 text-center rounded-xl py-1.5"
                 style={{ background: today ? 'var(--brand)' : 'var(--cream)' }}>
                 <p className="text-[9px] font-bold uppercase tracking-wider"
-                  style={{ color: today ? 'rgba(255,255,255,0.7)' : '#AFA59A' }}>
+                  style={{ color: today ? 'rgba(255,255,255,0.65)' : '#AFA59A' }}>
                   {dayNameShort(date)}
                 </p>
                 <p className="text-2xl font-extrabold leading-none mt-0.5"
@@ -166,7 +175,7 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
                   <>
                     {day.hasLunch && (
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[11px] flex-shrink-0" style={{ color: '#D4A017' }}>☀</span>
+                        <Sun size={11} style={{ color: '#D4A017', flexShrink: 0 }} />
                         <span className="text-[13px] truncate font-medium"
                           style={{ color: lunchNames ? 'var(--brand)' : '#C8C0B5' }}>
                           {lunchNames || 'Sin platos'}
@@ -175,7 +184,7 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
                     )}
                     {day.hasDinner && (
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[11px] flex-shrink-0" style={{ color: '#7C6FA0' }}>☽</span>
+                        <Moon size={11} style={{ color: '#7C6FA0', flexShrink: 0 }} />
                         <span className="text-[13px] truncate font-medium"
                           style={{ color: dinnerNames ? 'var(--brand)' : '#C8C0B5' }}>
                           {dinnerNames || 'Sin platos'}
@@ -183,10 +192,13 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
                       </div>
                     )}
                     {day.notes && (
-                      <p className="text-[11px] truncate" style={{ color: '#AFA59A' }}>📝 {day.notes}</p>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <FileText size={10} style={{ color: '#AFA59A', flexShrink: 0 }} />
+                        <p className="text-[11px] truncate" style={{ color: '#AFA59A' }}>{day.notes}</p>
+                      </div>
                     )}
                     {!day.hasLunch && !day.hasDinner && (
-                      <p className="text-[13px]" style={{ color: '#C8C0B5' }}>Día libre</p>
+                      <p className="text-[13px]" style={{ color: '#C8C0B5' }}>Dia libre</p>
                     )}
                   </>
                 ) : (
@@ -194,8 +206,8 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
                 )}
               </div>
 
-              {conflict && <span className="text-sm flex-shrink-0" style={{ color: '#E07050' }}>⚠</span>}
-              <span className="text-lg flex-shrink-0" style={{ color: '#D9D2CA' }}>›</span>
+              {conflict && <AlertTriangle size={14} style={{ color: '#E07050', flexShrink: 0 }} />}
+              <ChevronRight size={16} style={{ color: '#D9D2CA', flexShrink: 0 }} />
             </button>
           )
         })}

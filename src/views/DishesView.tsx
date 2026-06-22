@@ -5,6 +5,7 @@ import type { Dish, CourseType } from '../types'
 import { COURSE_LABEL } from '../types'
 import AddEditDishModal from './AddEditDishModal'
 import { showToast } from '../utils/toast'
+import { Search, X, Plus, Trash, Utensils } from '../components/Icon'
 
 export default function DishesView() {
   const [search, setSearch]             = useState('')
@@ -30,46 +31,45 @@ export default function DishesView() {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-gray-50">
-      {/* Search bar */}
-      <div className="px-4 pt-3 pb-2 bg-white border-b border-gray-100 space-y-2 flex-shrink-0">
-        <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2">
-          <span className="text-gray-400 text-sm">🔍</span>
-          <input
-            type="text"
-            placeholder="Buscar plato…"
-            value={search}
+    <div className="flex flex-col flex-1 min-h-0" style={{ background: 'var(--cream)' }}>
+      {/* Search + filters */}
+      <div className="px-4 pt-3 pb-3 bg-white border-b flex-shrink-0 space-y-2.5"
+        style={{ borderColor: 'var(--cream-border)' }}>
+
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+          style={{ background: 'var(--cream)', border: '1.5px solid var(--cream-border)' }}>
+          <Search size={15} style={{ color: '#AFA59A', flexShrink: 0 }} />
+          <input type="text" placeholder="Buscar plato…" value={search}
             onChange={e => setSearch(e.target.value)}
-            className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400"
-          />
-          {search && <button onClick={() => setSearch('')} className="text-gray-400 text-xs">✕</button>}
+            className="flex-1 bg-transparent text-sm outline-none"
+            style={{ color: 'var(--brand)' }} />
+          {search && (
+            <button onClick={() => setSearch('')} className="active:opacity-60">
+              <X size={14} style={{ color: '#AFA59A' }} />
+            </button>
+          )}
         </div>
 
-        {/* Category chips */}
-        <div className="overflow-x-auto -mx-4 px-4">
-          <div className="flex gap-2">
+        <div className="overflow-x-auto -mx-4 px-4" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-1.5 pb-0.5">
             <FilterChip label="Todos" active={!filterCatId} onClick={() => setFilterCatId(null)} />
             {(categories ?? []).map(cat => (
-              <FilterChip
-                key={cat.id}
-                label={cat.name}
+              <FilterChip key={cat.id} label={cat.name}
                 active={filterCatId === cat.id}
-                onClick={() => setFilterCatId(filterCatId === cat.id ? null : cat.id)}
-              />
+                onClick={() => setFilterCatId(filterCatId === cat.id ? null : cat.id)} />
             ))}
           </div>
         </div>
 
-        {/* Course filter */}
-        <div className="flex rounded-lg bg-gray-100 p-0.5 text-sm font-medium">
+        <div className="flex rounded-xl p-0.5" style={{ background: 'var(--cream)' }}>
           {(['todos', 'primero', 'segundo', 'unico'] as const).map(c => (
-            <button
-              key={c}
-              onClick={() => setFilterCourse(c)}
-              className={`flex-1 py-1.5 rounded-md transition-all text-xs ${
-                filterCourse === c ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
-              }`}
-            >
+            <button key={c} onClick={() => setFilterCourse(c)}
+              className="flex-1 py-1.5 rounded-[10px] text-xs font-semibold transition-all"
+              style={{
+                background: filterCourse === c ? 'white' : 'transparent',
+                color: filterCourse === c ? 'var(--brand)' : '#AFA59A',
+                boxShadow: filterCourse === c ? '0 1px 3px rgba(47,29,27,0.10)' : 'none',
+              }}>
               {c === 'todos' ? 'Todos' : COURSE_LABEL[c]}
             </button>
           ))}
@@ -79,55 +79,65 @@ export default function DishesView() {
       {/* List */}
       <div className="content-area">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-            <p className="text-4xl mb-3">🍽</p>
-            <p className="text-sm">{search ? 'Sin resultados' : 'No hay platos todavía'}</p>
+          <div className="flex flex-col items-center justify-center h-48">
+            <Utensils size={40} sw={1.25} style={{ color: '#D9D2CA', marginBottom: 12 }} />
+            <p className="text-sm font-medium" style={{ color: '#AFA59A' }}>
+              {search ? 'Sin resultados' : 'No hay platos todavia'}
+            </p>
+            {!search && <p className="text-xs mt-1" style={{ color: '#C8C0B5' }}>Pulsa + para añadir el primero</p>}
           </div>
         ) : (
-          <ul className="divide-y divide-gray-100 bg-white mx-4 mt-4 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            {filtered.map(dish => (
-              <li key={dish.id}>
+          <ul className="mx-4 mt-3 rounded-2xl overflow-hidden"
+            style={{ background: 'white', border: '1px solid var(--cream-border)',
+                     boxShadow: '0 1px 4px rgba(47,29,27,0.06)' }}>
+            {filtered.map((dish, idx) => (
+              <li key={dish.id} className="list-item" style={{ '--i': idx } as React.CSSProperties}>
                 {confirmId === dish.id ? (
-                  /* Inline delete confirmation */
-                  <div className="flex items-center justify-between px-4 py-3 bg-red-50">
-                    <p className="text-sm text-red-700 font-medium">¿Eliminar "{dish.name}"?</p>
+                  <div className="flex items-center justify-between px-4 py-3.5 anim-scale"
+                    style={{ background: '#FEF3EE',
+                             borderTop: idx > 0 ? '1px solid #F5C0A4' : undefined }}>
+                    <p className="text-sm font-medium" style={{ color: '#8B4513' }}>
+                      Eliminar "{dish.name}"?
+                    </p>
                     <div className="flex gap-2">
-                      <button
-                        onClick={() => deleteDish(dish)}
-                        className="px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded-lg active:bg-red-600"
-                      >
-                        Sí
+                      <button onClick={() => deleteDish(dish)}
+                        className="px-3 py-1 rounded-lg text-xs font-semibold text-white"
+                        style={{ background: '#C0392B' }}>
+                        Eliminar
                       </button>
-                      <button
-                        onClick={() => setConfirmId(null)}
-                        className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg active:bg-gray-300"
-                      >
-                        No
+                      <button onClick={() => setConfirmId(null)}
+                        className="px-3 py-1 rounded-lg text-xs font-semibold"
+                        style={{ background: 'var(--cream)', color: 'var(--brand)' }}>
+                        Cancelar
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 px-4 py-3 active:bg-gray-50">
+                  <div className="flex items-center gap-3 px-4 py-3"
+                    style={{ borderTop: idx > 0 ? '1px solid var(--cream-border)' : undefined }}>
                     <button onClick={() => setEditingDish(dish)} className="flex-1 min-w-0 text-left">
-                      <p className="text-sm font-medium text-gray-900 truncate">{dish.name}</p>
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--brand)' }}>
+                        {dish.name}
+                      </p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-xs text-gray-400">{COURSE_LABEL[dish.course]}</span>
+                        <span className="text-xs" style={{ color: '#AFA59A' }}>{COURSE_LABEL[dish.course]}</span>
                         {dish.categoryIds.map(cid => {
                           const cat = (categories ?? []).find(c => c.id === cid)
                           return cat ? (
-                            <span key={cid} className="chip bg-blue-50 text-blue-600">{cat.name}</span>
+                            <span key={cid} className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium"
+                              style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
+                              {cat.name}
+                            </span>
                           ) : null
                         })}
                       </div>
                       {dish.notes && (
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">{dish.notes}</p>
+                        <p className="text-xs mt-0.5 truncate" style={{ color: '#AFA59A' }}>{dish.notes}</p>
                       )}
                     </button>
-                    <button
-                      onClick={() => setConfirmId(dish.id)}
-                      className="flex-shrink-0 w-7 h-7 flex items-center justify-center text-gray-300 active:text-red-400 rounded-full"
-                    >
-                      🗑
+                    <button onClick={() => setConfirmId(dish.id)}
+                      className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full active:bg-red-50 transition-colors">
+                      <Trash size={15} style={{ color: '#D9D2CA' }} />
                     </button>
                   </div>
                 )}
@@ -135,17 +145,21 @@ export default function DishesView() {
             ))}
           </ul>
         )}
-        <div className="h-6" />
+        <div className="h-24" />
       </div>
 
       {/* FAB */}
       <button
         onClick={() => setEditingDish('new')}
-        className="fixed right-5 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg
-          flex items-center justify-center text-2xl active:bg-blue-600 transition-colors z-10"
-        style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
-      >
-        +
+        className="fixed flex items-center justify-center rounded-full active:scale-95 transition-transform"
+        style={{
+          right: 20,
+          bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+          width: 56, height: 56,
+          background: 'var(--brand)', color: 'white',
+          boxShadow: '0 4px 16px rgba(47,29,27,0.30)',
+        }}>
+        <Plus size={24} sw={2} />
       </button>
 
       {editingDish !== null && (
@@ -160,12 +174,13 @@ export default function DishesView() {
 
 function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-        active ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'
-      }`}
-    >
+    <button onClick={onClick}
+      className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:opacity-75"
+      style={{
+        background: active ? 'var(--brand)' : 'var(--cream)',
+        color: active ? 'white' : '#AFA59A',
+        border: `1.5px solid ${active ? 'var(--brand)' : 'var(--cream-border)'}`,
+      }}>
       {label}
     </button>
   )

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Tab } from './types'
 import { seedIfNeeded } from './utils/seeder'
 import ToastContainer from './components/ToastContainer'
+import { Calendar, Utensils, ShoppingBag, Clock } from './components/Icon'
 import WelcomeScreen from './views/WelcomeScreen'
 import WeeklyMenuView from './views/WeeklyMenuView'
 import DayMenuView from './views/DayMenuView'
@@ -15,11 +16,12 @@ type Screen =
   | { type: 'dayMenu'; date: string; weekStart: string }
   | { type: 'historyDetail'; menuId: string }
 
-const TABS: { id: Tab; icon: string; label: string }[] = [
-  { id: 'menu',      icon: '📅', label: 'Menú' },
-  { id: 'platos',    icon: '🍽',  label: 'Platos' },
-  { id: 'lista',     icon: '🛒',  label: 'Lista' },
-  { id: 'historial', icon: '🕐',  label: 'Historial' },
+type IconFC = React.FC<{ size?: number; style?: React.CSSProperties; sw?: number }>
+const TABS: { id: Tab; Icon: IconFC; label: string }[] = [
+  { id: 'menu',      Icon: Calendar,    label: 'Menú' },
+  { id: 'platos',    Icon: Utensils,    label: 'Platos' },
+  { id: 'lista',     Icon: ShoppingBag, label: 'Lista' },
+  { id: 'historial', Icon: Clock,       label: 'Historial' },
 ]
 
 const TAB_TITLE: Record<Tab, string> = {
@@ -54,8 +56,7 @@ export default function App() {
 
         {/* ── Title bar ── */}
         <div className="flex items-center justify-between px-5 bg-white border-b flex-shrink-0 pt-safe"
-          style={{ borderColor: 'var(--cream-border)' }}
-        >
+          style={{ borderColor: 'var(--cream-border)' }}>
           <div className="py-3">
             <p className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: '#AFA59A' }}>
               TuCocinaApp
@@ -64,10 +65,7 @@ export default function App() {
               {TAB_TITLE[tab]}
             </h1>
           </div>
-          <button
-            onClick={() => setScreen({ type: 'welcome' })}
-            className="flex-shrink-0"
-          >
+          <button onClick={() => setScreen({ type: 'welcome' })} className="flex-shrink-0 active:opacity-70">
             <img src="/logo.png" alt="TuCocinaApp" className="h-10 w-auto opacity-90" />
           </button>
         </div>
@@ -89,17 +87,22 @@ export default function App() {
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id)}
-                  className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-opacity active:opacity-60"
+                  className="flex-1 relative flex flex-col items-center justify-center gap-1 transition-opacity active:opacity-60"
                 >
-                  <span className="text-[22px] leading-none">{t.icon}</span>
+                  <t.Icon
+                    size={22}
+                    style={{ color: active ? 'var(--brand)' : '#C8C0B5',
+                             transition: 'color 0.15s' }}
+                  />
                   <span
                     className="text-[10px] font-semibold"
-                    style={{ color: active ? 'var(--brand)' : '#C8C0B5' }}
+                    style={{ color: active ? 'var(--brand)' : '#C8C0B5',
+                             transition: 'color 0.15s' }}
                   >
                     {t.label}
                   </span>
                   {active && (
-                    <span className="absolute bottom-0 w-8 h-0.5 rounded-full"
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full"
                       style={{ background: 'var(--brand)' }} />
                   )}
                 </button>

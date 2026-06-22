@@ -7,6 +7,7 @@ import { fullDayTitle, weekDates } from '../utils/dateUtils'
 import { hasConflict, getUsedCategoryIds } from '../utils/validationUtils'
 import DishPickerModal from './DishPickerModal'
 import { showToast } from '../utils/toast'
+import { ChevronLeft, ChevronRight, Plus, Sun, Moon, FileText, AlertTriangle } from '../components/Icon'
 
 interface Props { date: string; weekStart: string; onBack: () => void }
 
@@ -75,7 +76,7 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
         <button onClick={onBack}
           className="flex items-center gap-1 font-semibold text-sm active:opacity-60"
           style={{ color: 'var(--brand)' }}>
-          <span className="text-xl">‹</span>Menú
+          <ChevronLeft size={20} /><span>Menú</span>
         </button>
         <div className="flex-1 text-center">
           <p className="font-bold text-sm" style={{ color: 'var(--brand)' }}>{fullDayTitle(date)}</p>
@@ -86,18 +87,17 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
       <div className="screen-scroll px-4 py-4 space-y-3">
         {/* Conflict warning */}
         {conflict && (
-          <div className="flex items-center gap-2.5 p-3 rounded-2xl"
+          <div className="flex items-center gap-2.5 p-3.5 rounded-2xl anim-scale"
             style={{ background: '#FEF3EE', border: '1px solid #F5C0A4' }}>
-            <span style={{ color: '#E07050' }}>⚠</span>
-            <p className="text-sm font-medium" style={{ color: '#8B4513' }}>Categoría repetida en este día</p>
+            <AlertTriangle size={16} style={{ color: '#E07050', flexShrink: 0 }} />
+            <p className="text-sm font-medium" style={{ color: '#8B4513' }}>Categoria repetida en este dia</p>
           </div>
         )}
 
         <MealCard
-          title="Comida" icon="☀" iconColor="#D4A017"
+          title="Comida" MealIcon={Sun} iconColor="#D4A017"
           hasMeal={day?.hasLunch ?? true} mode={day?.lunchMode ?? 'primeroYSegundo'}
           firstDish={getDish('firstLunch')} secondDish={getDish('secondLunch')} singleDish={getDish('singleLunch')}
-          usedCatIds={usedCatIds} dishMap={dishMap}
           onToggle={v => updateDay({ hasLunch: v })}
           onModeChange={m => updateDay({ lunchMode: m })}
           onPickFirst={() => setPickerSlot('firstLunch')}
@@ -106,10 +106,9 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
         />
 
         <MealCard
-          title="Cena" icon="☽" iconColor="#7C6FA0"
+          title="Cena" MealIcon={Moon} iconColor="#7C6FA0"
           hasMeal={day?.hasDinner ?? true} mode={day?.dinnerMode ?? 'primeroYSegundo'}
           firstDish={getDish('firstDinner')} secondDish={getDish('secondDinner')} singleDish={getDish('singleDinner')}
-          usedCatIds={usedCatIds} dishMap={dishMap}
           onToggle={v => updateDay({ hasDinner: v })}
           onModeChange={m => updateDay({ dinnerMode: m })}
           onPickFirst={() => setPickerSlot('firstDinner')}
@@ -120,8 +119,8 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
         {/* Notes */}
         <div className="card">
           <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--cream-border)' }}>
-            <span className="text-sm">📝</span>
-            <span className="font-semibold text-sm" style={{ color: 'var(--brand)' }}>Notas del día</span>
+            <FileText size={14} style={{ color: '#AFA59A' }} />
+            <span className="font-semibold text-sm" style={{ color: 'var(--brand)' }}>Notas del dia</span>
           </div>
           <textarea
             value={day?.notes ?? ''}
@@ -130,7 +129,7 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
               await db.days.update(d.id, { notes: e.target.value })
             }}
             onBlur={() => day?.notes && showToast('Notas guardadas')}
-            placeholder="Cenar fuera, cumpleaños, comprar pan…"
+            placeholder="Cenar fuera, cumpleanos, comprar pan…"
             rows={3}
             className="w-full px-4 py-3 text-sm resize-none outline-none"
             style={{ color: 'var(--brand)', background: 'transparent' }}
@@ -155,46 +154,36 @@ export default function DayMenuView({ date, weekStart, onBack }: Props) {
 
 /* ── MealCard ────────────────────────────────────────────────────────────── */
 interface MealCardProps {
-  title: string; icon: string; iconColor: string
+  title: string
+  MealIcon: React.FC<{ size?: number; style?: React.CSSProperties; sw?: number }>
+  iconColor: string
   hasMeal: boolean; mode: MealMode
   firstDish?: Dish; secondDish?: Dish; singleDish?: Dish
-  usedCatIds: Set<string>; dishMap: Map<string, Dish>
   onToggle: (v: boolean) => void; onModeChange: (m: MealMode) => void
   onPickFirst: () => void; onPickSecond: () => void; onPickSingle: () => void
 }
 
-function MealCard({ title, icon, iconColor, hasMeal, mode,
+function MealCard({ title, MealIcon, iconColor, hasMeal, mode,
                     firstDish, secondDish, singleDish,
                     onToggle, onModeChange, onPickFirst, onPickSecond, onPickSingle }: MealCardProps) {
   return (
     <div className="card">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3.5 border-b"
         style={{ borderColor: 'var(--cream-border)' }}>
         <div className="flex items-center gap-2">
-          <span style={{ color: iconColor }}>{icon}</span>
+          <MealIcon size={15} style={{ color: iconColor }} />
           <span className="font-bold text-sm" style={{ color: 'var(--brand)' }}>{title}</span>
         </div>
-        {/* Toggle */}
-        <button
-          onClick={() => onToggle(!hasMeal)}
-          className="relative flex-shrink-0"
-          style={{ width: 44, height: 24 }}
-        >
+        <button onClick={() => onToggle(!hasMeal)} className="relative flex-shrink-0" style={{ width: 44, height: 24 }}>
           <div className="absolute inset-0 rounded-full transition-colors duration-200"
             style={{ background: hasMeal ? 'var(--brand)' : '#D9D2CA' }} />
-          <div className="absolute top-[2px] rounded-full bg-white transition-transform duration-200"
-            style={{
-              width: 20, height: 20,
-              left: hasMeal ? 22 : 2,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-            }} />
+          <div className="absolute top-[2px] rounded-full bg-white transition-all duration-200"
+            style={{ width: 20, height: 20, left: hasMeal ? 22 : 2, boxShadow: '0 1px 3px rgba(0,0,0,0.20)' }} />
         </button>
       </div>
 
       {hasMeal && (
         <div className="p-4 space-y-3">
-          {/* Mode picker */}
           <div className="flex rounded-xl p-0.5" style={{ background: 'var(--cream)' }}>
             {(['primeroYSegundo', 'platoUnico'] as MealMode[]).map(m => (
               <button key={m} onClick={() => onModeChange(m)}
@@ -234,9 +223,10 @@ function SlotButton({ label, dish, onClick }: { label: string; dish?: Dish; onCl
           {dish?.name ?? 'Seleccionar…'}
         </p>
       </div>
-      <span className="text-lg ml-2 flex-shrink-0" style={{ color: dish ? 'var(--brand)' : '#D9D2CA' }}>
-        {dish ? '›' : '+'}
-      </span>
+      {dish
+        ? <ChevronRight size={16} style={{ color: 'var(--brand)', flexShrink: 0 }} />
+        : <Plus size={16} style={{ color: '#D9D2CA', flexShrink: 0 }} />
+      }
     </button>
   )
 }
