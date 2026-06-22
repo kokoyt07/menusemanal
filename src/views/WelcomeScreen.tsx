@@ -2,7 +2,9 @@ import { useState } from 'react'
 import type { SVGProps } from 'react'
 import { Calendar, Utensils, Tag, Zap, Share, ChevronRight } from '../components/Icon'
 
-interface Props { onEnter: () => void }
+type Step = 'home' | 'install' | 'tutorial'
+
+interface Props { onEnter: () => void; defaultStep?: 'tutorial' | 'install' }
 
 type IconFC = React.FC<SVGProps<SVGSVGElement> & { size?: number; sw?: number }>
 
@@ -13,11 +15,9 @@ const TUTORIAL_STEPS: { Icon: IconFC; title: string; desc: string }[] = [
   { Icon: Zap,      title: 'Relleno Automático',  desc: 'Pulsa "Rellenar semana" y la app sugiere menús variados e inteligentes, ¡incluyendo sobras!' },
 ]
 
-type Step = 'home' | 'install' | 'tutorial'
-
-export default function WelcomeScreen({ onEnter }: Props) {
+export default function WelcomeScreen({ onEnter, defaultStep }: Props) {
   const isFirstTime = !localStorage.getItem('tucocinapp_onboarded')
-  const [step, setStep]     = useState<Step>('home')
+  const [step, setStep]     = useState<Step>(defaultStep ?? 'home')
   const [tutIdx, setTutIdx] = useState(0)
 
   function finish() {
@@ -30,7 +30,7 @@ export default function WelcomeScreen({ onEnter }: Props) {
     const cur    = TUTORIAL_STEPS[tutIdx]
     const isLast = tutIdx === TUTORIAL_STEPS.length - 1
     return (
-      <div key={tutIdx} className="screen-full anim-fade flex flex-col px-6 pt-safe" style={{ background: 'white' }}>
+      <div key={tutIdx} className="screen-full anim-fade flex flex-col px-6 pt-safe" style={{ background: 'var(--surface)' }}>
         {/* Progress dots */}
         <div className="flex justify-center gap-2 pt-5 pb-2 flex-shrink-0">
           {TUTORIAL_STEPS.map((_, i) => (
@@ -142,7 +142,7 @@ function InstallScreen({ onNext }: { onNext: () => void }) {
   const steps = platform === 'ios' ? iosSteps : androidSteps
 
   return (
-    <div className="screen-full anim-up flex flex-col px-6 pt-safe" style={{ background: 'white' }}>
+    <div className="screen-full anim-up flex flex-col px-6 pt-safe" style={{ background: 'var(--surface)' }}>
       <div className="flex-shrink-0 py-5">
         <h2 className="text-2xl font-bold mb-1" style={{ color: 'var(--brand)' }}>Instalar en tu móvil</h2>
         <p className="text-sm" style={{ color: '#AFA59A' }}>
@@ -155,7 +155,7 @@ function InstallScreen({ onNext }: { onNext: () => void }) {
           <button key={p} onClick={() => setPlatform(p)}
             className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all"
             style={{
-              background: platform === p ? 'white' : 'transparent',
+              background: platform === p ? 'var(--surface)' : 'transparent',
               color: platform === p ? 'var(--brand)' : '#AFA59A',
               boxShadow: platform === p ? '0 1px 4px rgba(47,29,27,0.10)' : 'none',
             }}>

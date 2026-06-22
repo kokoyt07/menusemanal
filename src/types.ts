@@ -1,6 +1,6 @@
 export type CourseType = 'primero' | 'segundo' | 'unico'
 export type MealMode  = 'primeroYSegundo' | 'platoUnico'
-export type Tab       = 'menu' | 'platos' | 'lista' | 'historial'
+export type Tab       = 'menu' | 'platos' | 'lista' | 'historial' | 'ajustes'
 
 export interface DishCategory {
   id: string

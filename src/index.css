@@ -10,8 +10,25 @@
   --brand-soft:   #F3E7E4;
   --cream:        #F8F6F3;
   --cream-border: #EDE9E3;
+  --surface:      #FFFFFF;
   --shadow-color: rgba(47,29,27,0.08);
 }
+
+/* ── Dark mode ─────────────────────────────────────────────────────────────── */
+html.dark {
+  color-scheme: dark;
+  --brand:        #E8D5D0;
+  --brand-hover:  #F3E7E4;
+  --brand-soft:   #3D2421;
+  --cream:        #120A09;
+  --cream-border: #2E1C1A;
+  --surface:      #1E1210;
+  --shadow-color: rgba(0,0,0,0.40);
+}
+
+html.dark .bg-white { background: var(--surface) !important; }
+html.dark .border-t,
+html.dark .border-b { border-color: var(--cream-border); }
 
 /* ── Base ──────────────────────────────────────────────────────────────────── */
 *, *::before, *::after {
@@ -76,7 +93,7 @@ input, textarea, select { font-size: 16px !important; }
 
 .sheet-content {
   width: 100%;
-  background: white;
+  background: var(--surface);
   border-radius: 24px 24px 0 0;
   max-height: 92dvh;
   display: flex; flex-direction: column;
@@ -96,7 +113,7 @@ input, textarea, select { font-size: 16px !important; }
 
 /* Cards */
 .card {
-  background: white;
+  background: var(--surface);
   border-radius: 16px;
   border: 1px solid var(--cream-border);
   box-shadow: 0 2px 6px var(--shadow-color), 0 1px 2px rgba(47,29,27,0.03);
@@ -141,7 +158,8 @@ input, textarea, select { font-size: 16px !important; }
 }
 .toggle-track.on { background: var(--brand); }
 .toggle-thumb {
-  @apply absolute top-0.5 left-[2px] bg-white rounded-full h-5 w-5 transition-transform duration-200 shadow-sm;
+  @apply absolute top-0.5 left-[2px] rounded-full h-5 w-5 transition-transform duration-200 shadow-sm;
+  background: white;
 }
 .toggle-thumb.on { transform: translateX(20px); }
 
@@ -165,6 +183,10 @@ input, textarea, select { font-size: 16px !important; }
 @keyframes pulse-soft {
   0%, 100% { opacity: 1 }
   50%       { opacity: 0.5 }
+}
+@keyframes spin {
+  from { transform: rotate(0deg) }
+  to   { transform: rotate(360deg) }
 }
 
 .anim-fade   { animation: fadeIn   0.18s ease both }

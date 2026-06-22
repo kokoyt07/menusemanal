@@ -104,8 +104,8 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
                 style={{ width: 36, height: 20 }}>
                 <div className="absolute inset-0 rounded-full transition-colors duration-150"
                   style={{ background: showAll ? 'var(--brand)' : '#D9D2CA' }} />
-                <div className="absolute top-[2px] rounded-full bg-white transition-all duration-150"
-                  style={{ width: 16, height: 16, left: showAll ? 18 : 2, boxShadow: '0 1px 2px rgba(0,0,0,0.15)' }} />
+                <div className="absolute top-[2px] rounded-full transition-all duration-150"
+                  style={{ background: 'white', width: 16, height: 16, left: showAll ? 18 : 2, boxShadow: '0 1px 2px rgba(0,0,0,0.15)' }} />
               </div>
               <span className="text-xs font-medium" style={{ color: '#AFA59A' }}>Ver todos los tipos</span>
             </label>
@@ -126,7 +126,7 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
                 </div>
                 <button onClick={onClear}
                   className="text-xs font-semibold px-3 py-1.5 rounded-lg active:opacity-70"
-                  style={{ background: 'white', color: '#C0392B' }}>
+                  style={{ background: 'var(--surface)', color: '#C0392B' }}>
                   Quitar
                 </button>
               </div>
@@ -156,7 +156,7 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
                         className="w-full flex items-center gap-3 px-4 py-3 text-left active:opacity-75"
                         style={{
                           borderTop: idx > 0 ? '1px solid var(--cream-border)' : undefined,
-                          background: isCurrent ? 'var(--brand-soft)' : 'white',
+                          background: isCurrent ? 'var(--brand-soft)' : 'var(--surface)',
                         }}>
                         {dish.isFavorite && (
                           <Heart size={12} style={{ color: '#C0392B', fill: '#C0392B', flexShrink: 0 }} />

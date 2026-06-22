@@ -2,16 +2,17 @@ import { useState, useEffect } from 'react'
 import type { Tab } from './types'
 import { seedIfNeeded } from './utils/seeder'
 import ToastContainer from './components/ToastContainer'
-import { Calendar, Utensils, ShoppingBag, Clock } from './components/Icon'
+import { Calendar, Utensils, ShoppingBag, Clock, Settings } from './components/Icon'
 import WelcomeScreen from './views/WelcomeScreen'
 import WeeklyMenuView from './views/WeeklyMenuView'
 import DayMenuView from './views/DayMenuView'
 import DishesView from './views/DishesView'
 import ShoppingListView from './views/ShoppingListView'
 import HistoryView, { HistoryDetailView } from './views/HistoryView'
+import SettingsView from './views/SettingsView'
 
 type Screen =
-  | { type: 'welcome' }
+  | { type: 'welcome'; step?: 'tutorial' | 'install' }
   | { type: 'main' }
   | { type: 'dayMenu'; date: string; weekStart: string }
   | { type: 'historyDetail'; menuId: string }
@@ -22,6 +23,7 @@ const TABS: { id: Tab; Icon: IconFC; label: string }[] = [
   { id: 'platos',    Icon: Utensils,    label: 'Platos' },
   { id: 'lista',     Icon: ShoppingBag, label: 'Lista' },
   { id: 'historial', Icon: Clock,       label: 'Historial' },
+  { id: 'ajustes',   Icon: Settings,    label: 'Ajustes' },
 ]
 
 const TAB_TITLE: Record<Tab, string> = {
@@ -29,6 +31,7 @@ const TAB_TITLE: Record<Tab, string> = {
   platos:    'Mis Platos',
   lista:     'Lista de la Compra',
   historial: 'Historial',
+  ajustes:   'Ajustes',
 }
 
 export default function App() {
@@ -42,7 +45,10 @@ export default function App() {
   if (screen.type === 'welcome') {
     return (
       <>
-        <WelcomeScreen onEnter={() => setScreen({ type: 'main' })} />
+        <WelcomeScreen
+          onEnter={() => setScreen({ type: 'main' })}
+          defaultStep={screen.step}
+        />
         <ToastContainer />
       </>
     )
@@ -55,8 +61,8 @@ export default function App() {
       <div className={screen.type === 'main' ? 'flex flex-col h-full' : 'hidden'}>
 
         {/* ── Title bar ── */}
-        <div className="flex items-center justify-between px-5 bg-white border-b flex-shrink-0 pt-safe"
-          style={{ borderColor: 'var(--cream-border)' }}>
+        <div className="flex items-center justify-between px-5 border-b flex-shrink-0 pt-safe"
+          style={{ background: 'var(--surface)', borderColor: 'var(--cream-border)' }}>
           <div className="py-3">
             <p className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: '#AFA59A' }}>
               TuCocinaApp
@@ -76,10 +82,17 @@ export default function App() {
           {tab === 'platos'    && <DishesView />}
           {tab === 'lista'     && <ShoppingListView />}
           {tab === 'historial' && <HistoryView onMenuOpen={menuId => setScreen({ type: 'historyDetail', menuId })} />}
+          {tab === 'ajustes'   && (
+            <SettingsView
+              onShowTutorial={() => setScreen({ type: 'welcome', step: 'tutorial' })}
+              onShowInstall={() => setScreen({ type: 'welcome', step: 'install' })}
+            />
+          )}
         </div>
 
         {/* ── Tab bar ── */}
-        <nav className="bg-white border-t flex-shrink-0 tab-bar-height" style={{ borderColor: 'var(--cream-border)' }}>
+        <nav className="border-t flex-shrink-0 tab-bar-height"
+          style={{ background: 'var(--surface)', borderColor: 'var(--cream-border)' }}>
           <div className="flex h-[62px]">
             {TABS.map(t => {
               const active = tab === t.id

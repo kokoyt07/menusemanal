@@ -75,7 +75,7 @@ function HistoryMenuCard({ menu, onOpen }: { menu: WeeklyMenu; onOpen: () => voi
 
   return (
     <div className="rounded-2xl overflow-hidden"
-      style={{ background: 'white', border: '1px solid var(--cream-border)',
+      style={{ background: 'var(--surface)', border: '1px solid var(--cream-border)',
                boxShadow: '0 1px 4px rgba(47,29,27,0.06)' }}>
       <button onClick={onOpen} className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:opacity-75">
         <div className="flex-1">

@@ -104,7 +104,7 @@ export default function AddEditDishModal({ dish, onClose, presetCourse }: Props)
                 <button key={c} onClick={() => setCourse(c)}
                   className="flex-1 py-2 rounded-[10px] text-xs font-semibold transition-all"
                   style={{
-                    background: course === c ? 'white' : 'transparent',
+                    background: course === c ? 'var(--surface)' : 'transparent',
                     color: course === c ? 'var(--brand)' : '#AFA59A',
                     boxShadow: course === c ? '0 1px 4px rgba(47,29,27,0.10)' : 'none',
                   }}>

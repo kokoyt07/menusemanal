@@ -181,7 +181,7 @@ export default function ShoppingListView() {
 
         {/* Manual extras section — always visible */}
         <div className="rounded-2xl overflow-hidden"
-          style={{ background: 'white', border: '1px solid var(--cream-border)',
+          style={{ background: 'var(--surface)', border: '1px solid var(--cream-border)',
                    boxShadow: '0 1px 4px rgba(47,29,27,0.06)' }}>
           <div className="px-4 py-2.5 border-b" style={{ background: 'var(--cream)', borderColor: 'var(--cream-border)' }}>
             <p className="section-label">Extras manuales</p>
@@ -249,7 +249,7 @@ function CategorySection({
 }) {
   return (
     <div className="rounded-2xl overflow-hidden list-item"
-      style={{ '--i': idx, background: 'white', border: '1px solid var(--cream-border)',
+      style={{ '--i': idx, background: 'var(--surface)', border: '1px solid var(--cream-border)',
                boxShadow: '0 1px 4px rgba(47,29,27,0.06)' } as React.CSSProperties}>
       <div className="px-4 py-2.5 border-b" style={{ background: 'var(--cream)', borderColor: 'var(--cream-border)' }}>
         <p className="section-label">{title}</p>
