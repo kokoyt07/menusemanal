@@ -45,7 +45,13 @@ export default function AuthScreen() {
     setMessage(null)
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
     setLoading(false)
-    if (error) { setMessage({ text: 'Email o contraseña incorrectos.', ok: false }); haptic(20) }
+    if (error) {
+      const msg = error.message.toLowerCase().includes('email not confirmed')
+        ? 'Confirma tu email antes de iniciar sesión. Revisa tu bandeja de entrada.'
+        : 'Email o contraseña incorrectos.'
+      setMessage({ text: msg, ok: false })
+      haptic(20)
+    }
   }
 
   async function handleRegister() {

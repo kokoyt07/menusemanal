@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { MenuDay, WeeklyMenu, MealMode } from '../types'
 import { supabase } from '../lib/supabase'
 import { weekDates } from '../utils/dateUtils'
+import { showToast } from '../utils/toast'
 
 /* ── DB row type ─────────────────────────────────────────────────────────── */
 interface DbDay {
@@ -69,12 +70,18 @@ export function useWeekMenu(weekStart: string, userId: string): UseWeekMenuResul
 
   async function fetchWeek() {
     setLoading(true)
-    const { data: menuData } = await supabase
+    const { data: menuData, error: menuErr } = await supabase
       .from('weekly_menus')
       .select('*')
       .eq('week_start_date', weekStart)
       .eq('user_id', userId)
       .maybeSingle()
+
+    if (menuErr) {
+      console.error('[useWeekMenu] fetchWeek:', menuErr)
+      setLoading(false)
+      return
+    }
 
     if (!menuData) {
       setMenu(null)
@@ -87,10 +94,15 @@ export function useWeekMenu(weekStart: string, userId: string): UseWeekMenuResul
     setMenu({ id: menuData.id, weekStartDate: menuData.week_start_date })
     menuIdRef.current = menuData.id
 
-    const { data: daysData } = await supabase
+    const { data: daysData, error: daysErr } = await supabase
       .from('menu_days')
       .select('*')
       .eq('menu_id', menuData.id)
+      .eq('user_id', userId)
+
+    if (daysErr) {
+      console.error('[useWeekMenu] fetchDays:', daysErr)
+    }
 
     syncDays((daysData ?? []).map(mapDay))
     setLoading(false)
@@ -109,14 +121,27 @@ export function useWeekMenu(weekStart: string, userId: string): UseWeekMenuResul
 
     creatingRef.current = (async () => {
       const id = crypto.randomUUID()
-      await supabase.from('weekly_menus').insert({ id, user_id: userId, week_start_date: weekStart })
+      const { error: menuErr } = await supabase
+        .from('weekly_menus')
+        .insert({ id, user_id: userId, week_start_date: weekStart })
+
+      if (menuErr) {
+        console.error('[useWeekMenu] createMenu:', menuErr)
+        creatingRef.current = null
+        showToast('Error al crear el menú semanal', 'error')
+        throw menuErr
+      }
 
       const dayRows = weekDates(weekStart).map(date => ({
         id: crypto.randomUUID(), menu_id: id, user_id: userId, date,
         has_lunch: true, has_dinner: true,
         lunch_mode: 'primeroYSegundo', dinner_mode: 'primeroYSegundo',
       }))
-      await supabase.from('menu_days').insert(dayRows)
+
+      const { error: daysErr } = await supabase.from('menu_days').insert(dayRows)
+      if (daysErr) {
+        console.error('[useWeekMenu] createDays:', daysErr)
+      }
 
       const newDays: MenuDay[] = dayRows.map(d => ({
         id: d.id, menuId: id, date: d.date,
@@ -136,13 +161,25 @@ export function useWeekMenu(weekStart: string, userId: string): UseWeekMenuResul
   }
 
   async function updateDay(date: string, changes: Partial<MenuDay>): Promise<void> {
-    const mId = await ensureMenuId()
+    let mId: string
+    try {
+      mId = await ensureMenuId()
+    } catch {
+      return
+    }
+
     const existing = daysRef.current.find(d => d.date === date)
     const dbChanges = toDbChanges(changes)
 
     if (existing) {
+      const prev = existing
       syncDays(daysRef.current.map(d => d.date === date ? { ...d, ...changes } : d))
-      await supabase.from('menu_days').update(dbChanges).eq('id', existing.id)
+      const { error } = await supabase.from('menu_days').update(dbChanges).eq('id', existing.id)
+      if (error) {
+        console.error('[useWeekMenu] updateDay:', error)
+        syncDays(daysRef.current.map(d => d.date === date ? prev : d))
+        showToast('Error al guardar el menú del día', 'error')
+      }
     } else {
       const newDay: MenuDay = {
         id: crypto.randomUUID(), menuId: mId, date,
@@ -151,12 +188,17 @@ export function useWeekMenu(weekStart: string, userId: string): UseWeekMenuResul
         ...changes,
       }
       syncDays([...daysRef.current, newDay])
-      await supabase.from('menu_days').insert({
+      const { error } = await supabase.from('menu_days').insert({
         id: newDay.id, menu_id: mId, user_id: userId, date,
         has_lunch: newDay.hasLunch, has_dinner: newDay.hasDinner,
         lunch_mode: newDay.lunchMode, dinner_mode: newDay.dinnerMode,
         ...dbChanges,
       })
+      if (error) {
+        console.error('[useWeekMenu] insertDay:', error)
+        syncDays(daysRef.current.filter(d => d.id !== newDay.id))
+        showToast('Error al guardar el menú del día', 'error')
+      }
     }
   }
 
@@ -171,7 +213,12 @@ export function useWeekMenu(weekStart: string, userId: string): UseWeekMenuResul
       firstLunchDishId: undefined, secondLunchDishId: undefined, singleLunchDishId: undefined,
       firstDinnerDishId: undefined, secondDinnerDishId: undefined, singleDinnerDishId: undefined,
     })))
-    await supabase.from('menu_days').update(empty).eq('menu_id', menuIdRef.current)
+    const { error } = await supabase.from('menu_days').update(empty).eq('menu_id', menuIdRef.current)
+    if (error) {
+      console.error('[useWeekMenu] clearWeek:', error)
+      showToast('Error al limpiar el menú', 'error')
+      fetchWeek()
+    }
   }
 
   return { menu, days, loading, updateDay, clearWeek, refresh: fetchWeek }
