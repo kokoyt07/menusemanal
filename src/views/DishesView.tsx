@@ -6,6 +6,7 @@ import AddEditDishModal from './AddEditDishModal'
 import { showToast } from '../utils/toast'
 import { haptic } from '../utils/haptic'
 import { Search, X, Plus, Trash, Utensils, Heart, Sliders, Pencil } from '../components/Icon'
+import { DishListSkeleton } from '../components/Skeleton'
 
 export default function DishesView() {
   const [search, setSearch]             = useState('')
@@ -38,6 +39,8 @@ export default function DishesView() {
   }
 
   const dishCount = allDishes?.length ?? 0
+
+  if (allDishes === undefined) return <DishListSkeleton />
 
   return (
     <div className="flex flex-col flex-1 min-h-0" style={{ background: 'var(--cream)' }}>

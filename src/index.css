@@ -163,6 +163,23 @@ input, textarea, select { font-size: 16px !important; }
 }
 .toggle-thumb.on { transform: translateX(20px); }
 
+/* ── Skeleton shimmer ───────────────────────────────────────────────────── */
+@keyframes shimmer {
+  from { background-position: -600px 0 }
+  to   { background-position:  600px 0 }
+}
+.skeleton {
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    var(--cream-border) 25%,
+    var(--cream)        50%,
+    var(--cream-border) 75%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
 /* ── Animations ─────────────────────────────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0 }

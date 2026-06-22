@@ -8,6 +8,7 @@ import { currentWeekStart, addWeeks, weekDates, weekRangeLabel, isCurrentWeek, f
 import { showToast } from '../utils/toast'
 import { haptic } from '../utils/haptic'
 import { ChevronLeft, ChevronRight, ShoppingBag, Share, Plus, X } from '../components/Icon'
+import { ShoppingListSkeleton } from '../components/Skeleton'
 
 interface Props { userId: string }
 
@@ -105,6 +106,8 @@ export default function ShoppingListView({ userId }: Props) {
     setWeekStart(newStart)
     setChecked(new Set())
   }
+
+  if (allDishes === undefined) return <ShoppingListSkeleton />
 
   return (
     <div className="flex flex-col flex-1 min-h-0" style={{ background: 'var(--cream)' }}>

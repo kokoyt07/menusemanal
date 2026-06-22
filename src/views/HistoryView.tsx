@@ -6,6 +6,7 @@ import type { MenuDay, Dish } from '../types'
 import { weekRangeLabel, fullDayTitle } from '../utils/dateUtils'
 import { showToast } from '../utils/toast'
 import { History, ChevronRight, Trash, Copy, Sun, Moon, ChevronLeft } from '../components/Icon'
+import { HistorySkeleton } from '../components/Skeleton'
 
 interface Props { userId: string }
 
@@ -29,10 +30,7 @@ export default function HistoryView({ userId }: Props) {
     <div className="flex flex-col flex-1 min-h-0" style={{ background: 'var(--cream)' }}>
       <div className="content-area px-4 pt-4 space-y-2">
         {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="w-6 h-6 rounded-full border-2 animate-spin"
-              style={{ borderColor: 'var(--brand)', borderTopColor: 'transparent' }} />
-          </div>
+          <HistorySkeleton />
         ) : (menus ?? []).length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-center">
             <History size={44} sw={1.25} style={{ color: '#D9D2CA', marginBottom: 12 }} />

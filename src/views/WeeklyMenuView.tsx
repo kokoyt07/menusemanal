@@ -9,6 +9,7 @@ import { autoFillWeek } from '../utils/autoFill'
 import { showToast } from '../utils/toast'
 import { haptic } from '../utils/haptic'
 import { ChevronLeft, ChevronRight, Sun, Moon, FileText, AlertTriangle, Zap, Share, Trash } from '../components/Icon'
+import { WeekMenuSkeleton } from '../components/Skeleton'
 
 interface Props {
   userId: string
@@ -21,7 +22,7 @@ export default function WeeklyMenuView({ userId, onDayTap }: Props) {
   const [confirmClear, setConfirmClear] = useState(false)
 
   const { dishes: allDishes, addDish } = useData()
-  const { days, updateDay, clearWeek }  = useWeekMenu(weekStart, userId)
+  const { days, loading: menuLoading, updateDay, clearWeek }  = useWeekMenu(weekStart, userId)
 
   const dates   = weekDates(weekStart)
   const dishes  = allDishes ?? []
@@ -72,6 +73,8 @@ export default function WeeklyMenuView({ userId, onDayTap }: Props) {
       else { await navigator.clipboard.writeText(text); showToast('Copiado al portapapeles') }
     } catch { /* cancelled */ }
   }
+
+  if (menuLoading) return <WeekMenuSkeleton />
 
   return (
     <div className="flex flex-col flex-1 min-h-0" style={{ background: 'var(--cream)' }}>
