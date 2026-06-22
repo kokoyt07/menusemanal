@@ -182,7 +182,7 @@ export default function DishesView() {
 
       <button
         onClick={() => { haptic(); setEditingDish('new') }}
-        className="fixed flex items-center justify-center rounded-full active:scale-95 transition-transform"
+        className="dish-fab fixed flex items-center justify-center rounded-full active:scale-95 transition-transform"
         style={{
           right: 20,
           bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',

@@ -42,19 +42,23 @@ export default function App() {
 
   if (authLoading) {
     return (
-      <div className="screen-full flex items-center justify-center" style={{ background: 'var(--brand)' }}>
-        <img src="/logo.png" alt="" className="w-16 h-16 opacity-70"
-          style={{ filter: 'brightness(0) invert(1)', animation: 'pulse-soft 1.4s ease infinite' }} />
+      <div className="h-full font-sans flex justify-center" style={{ background: 'var(--cream-border)' }}>
+        <div className="app-column flex items-center justify-center" style={{ background: 'var(--brand)' }}>
+          <img src="/logo.png" alt="" className="w-16 h-16 opacity-70"
+            style={{ filter: 'brightness(0) invert(1)', animation: 'pulse-soft 1.4s ease infinite' }} />
+        </div>
       </div>
     )
   }
 
   if (!user) {
     return (
-      <>
-        <AuthScreen />
-        <ToastContainer />
-      </>
+      <div className="h-full font-sans flex justify-center" style={{ background: 'var(--cream-border)' }}>
+        <div className="app-column">
+          <AuthScreen />
+          <ToastContainer />
+        </div>
+      </div>
     )
   }
 
@@ -63,18 +67,25 @@ export default function App() {
   if (screen.type === 'welcome') {
     return (
       <DataProvider userId={user.id}>
-        <WelcomeScreen
-          onEnter={() => setScreen({ type: 'main' })}
-          defaultStep={screen.step}
-        />
-        <ToastContainer />
+        <div className="h-full font-sans flex justify-center" style={{ background: 'var(--cream-border)' }}>
+        <div className="app-column">
+          <WelcomeScreen
+            onEnter={() => setScreen({ type: 'main' })}
+            defaultStep={screen.step}
+          />
+          <ToastContainer />
+        </div>
+        </div>
       </DataProvider>
     )
   }
 
   return (
     <DataProvider userId={user.id}>
-      <div className="flex flex-col h-full font-sans" style={{ background: 'var(--cream)' }}>
+      {/* Outer div: full viewport, shows gutter color on tablet */}
+      <div className="h-full font-sans flex justify-center" style={{ background: 'var(--cream-border)' }}>
+      {/* Inner column: max 640px on tablet, full width on mobile */}
+      <div className="app-column">
         <ToastContainer />
 
         <div className={screen.type === 'main' ? 'flex flex-col h-full' : 'hidden'}>
@@ -136,7 +147,8 @@ export default function App() {
         {screen.type === 'dayMenu' && (
           <DayMenuView userId={user.id} date={screen.date} weekStart={screen.weekStart} onBack={goBack} />
         )}
-      </div>
+      </div>{/* end app-column */}
+      </div>{/* end outer centering div */}
     </DataProvider>
   )
 }
