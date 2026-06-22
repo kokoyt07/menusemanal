@@ -17,7 +17,7 @@ export default defineConfig({
       includeAssets: ['icon-192.png', 'icon-512.png', 'logo.png'],
       manifest: {
         name: 'TuCocinaApp',
-        short_name: 'TuCocina',
+        short_name: 'TuCocinaApp',
         description: 'Planifica menús semanales de comida y cena sin estrés',
         theme_color: '#2F1D1B',
         background_color: '#F8F6F3',
