@@ -16,9 +16,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png', 'logo.png'],
       manifest: {
-        name: 'Menús Semanales',
-        short_name: 'Menús',
-        description: 'Planificador de menús semanales de comida y cena',
+        name: 'TuCocinaApp',
+        short_name: 'TuCocina',
+        description: 'Planifica menús semanales de comida y cena sin estrés',
         theme_color: '#2F1D1B',
         background_color: '#F8F6F3',
         display: 'standalone',

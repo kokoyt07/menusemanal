@@ -76,10 +76,13 @@ export default function WelcomeScreen({ onEnter, defaultStep }: Props) {
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         <img src="/logo.png" alt="TuCocinaApp" className="w-36 mb-6 drop-shadow-xl"
           style={{ filter: 'brightness(0) invert(1)' }} />
-        <h1 className="text-white text-4xl font-extrabold mb-3 leading-tight tracking-tight">
-          Menús<br />Semanales
+        <h1 className="text-white text-4xl font-extrabold mb-2 leading-tight tracking-tight">
+          TuCocinaApp
         </h1>
-        <p className="text-sm leading-relaxed max-w-xs" style={{ color: 'rgba(255,255,255,0.60)' }}>
+        <p className="text-base font-semibold mb-3" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          Menús Semanales
+        </p>
+        <p className="text-sm leading-relaxed max-w-xs" style={{ color: 'rgba(255,255,255,0.50)' }}>
           Planifica comidas y cenas de toda la semana. Sin estrés, sin repeticiones.
         </p>
       </div>

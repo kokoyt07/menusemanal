@@ -273,7 +273,7 @@ export default function SettingsView({ userId, onLogout }: Props) {
         {/* Version */}
         <div className="card px-4 py-4 space-y-1.5">
           <p className="section-label mb-1">Versión</p>
-          <InfoRow label="TuCocinaApp" value={`v${__APP_VERSION__}`} />
+          <InfoRow label="Versión" value={`TuCocinaApp v${__APP_VERSION__}`} />
           <InfoRow label="Build" value={buildLabel} />
         </div>
 
