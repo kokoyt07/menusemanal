@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
 import type { ToastItem } from '../utils/toast'
 import { _subscribeToast } from '../utils/toast'
+import { Check, X, AlertTriangle } from './Icon'
 
-const BG: Record<string, string> = {
-  success: 'bg-gray-800',
-  error:   'bg-red-500',
-  info:    'bg-blue-500',
+const STYLE: Record<string, { bg: string; border: string; color: string }> = {
+  success: { bg: '#2F1D1B',  border: 'rgba(255,255,255,0.12)', color: '#fff' },
+  error:   { bg: '#C0392B',  border: 'rgba(255,255,255,0.12)', color: '#fff' },
+  info:    { bg: '#4E302D',  border: 'rgba(255,255,255,0.12)', color: '#fff' },
 }
-const ICON: Record<string, string> = {
-  success: '✓',
-  error:   '✕',
-  info:    'ℹ',
+
+const ICON = {
+  success: Check,
+  error:   X,
+  info:    AlertTriangle,
 }
 
 export default function ToastContainer() {
@@ -27,16 +29,19 @@ export default function ToastContainer() {
 
   return (
     <div className="fixed left-0 right-0 flex flex-col items-center gap-2 z-[100] pointer-events-none px-4"
-      style={{ top: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}
-    >
-      {toasts.map(t => (
-        <div
-          key={t.id}
-          className={`${BG[t.type]} px-5 py-2.5 rounded-full shadow-lg text-sm font-medium text-white`}
-        >
-          {ICON[t.type]} {t.message}
-        </div>
-      ))}
+      style={{ top: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}>
+      {toasts.map(t => {
+        const s = STYLE[t.type] ?? STYLE.info
+        const IcoComp = ICON[t.type as keyof typeof ICON] ?? Check
+        return (
+          <div key={t.id}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg text-sm font-semibold anim-scale"
+            style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color }}>
+            <IcoComp size={14} sw={2.5} />
+            <span>{t.message}</span>
+          </div>
+        )
+      })}
     </div>
   )
 }

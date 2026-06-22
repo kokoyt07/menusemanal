@@ -5,11 +5,11 @@ import type { Dish, CourseType } from '../types'
 import { COURSE_LABEL } from '../types'
 import { X, Plus, Check } from '../components/Icon'
 
-interface Props { dish?: Dish; onClose: () => void }
+interface Props { dish?: Dish; onClose: () => void; presetCourse?: CourseType }
 
-export default function AddEditDishModal({ dish, onClose }: Props) {
+export default function AddEditDishModal({ dish, onClose, presetCourse }: Props) {
   const [name, setName]             = useState(dish?.name ?? '')
-  const [course, setCourse]         = useState<CourseType>(dish?.course ?? 'primero')
+  const [course, setCourse]         = useState<CourseType>(dish?.course ?? presetCourse ?? 'primero')
   const [selCatIds, setSelCatIds]   = useState<Set<string>>(new Set(dish?.categoryIds ?? []))
   const [notes, setNotes]           = useState(dish?.notes ?? '')
   const [newCatName, setNewCatName] = useState('')

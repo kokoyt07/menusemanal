@@ -15,7 +15,14 @@ export interface Dish {
   course: CourseType
   categoryIds: string[]
   notes?: string
+  isFavorite?: boolean
   createdAt: string
+}
+
+export interface ShoppingExtra {
+  id: string
+  weekStart: string
+  text: string
 }
 
 export interface WeeklyMenu {

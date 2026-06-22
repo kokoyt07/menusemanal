@@ -8,15 +8,17 @@ import { hasConflict } from '../utils/validationUtils'
 import { getDishIdsFromDay } from '../types'
 import { autoFillWeek } from '../utils/autoFill'
 import { showToast } from '../utils/toast'
-import { ChevronLeft, ChevronRight, Sun, Moon, FileText, AlertTriangle, Zap, Share } from '../components/Icon'
+import { haptic } from '../utils/haptic'
+import { ChevronLeft, ChevronRight, Sun, Moon, FileText, AlertTriangle, Zap, Share, Trash } from '../components/Icon'
 
 interface Props {
   onDayTap: (date: string, weekStart: string) => void
 }
 
 export default function WeeklyMenuView({ onDayTap }: Props) {
-  const [weekStart, setWeekStart] = useState(currentWeekStart)
-  const [filling, setFilling]     = useState(false)
+  const [weekStart, setWeekStart]       = useState(currentWeekStart)
+  const [filling, setFilling]           = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
 
   const dates = weekDates(weekStart)
 
@@ -33,6 +35,7 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
   const dishMap = new Map<string, Dish>((dishes ?? []).map(d => [d.id, d]))
 
   async function handleAutoFill() {
+    haptic()
     setFilling(true)
     try {
       await autoFillWeek(weekStart)
@@ -42,6 +45,19 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
     } finally {
       setFilling(false)
     }
+  }
+
+  async function handleClearWeek() {
+    haptic(12)
+    const empty = {
+      firstLunchDishId: undefined, secondLunchDishId: undefined, singleLunchDishId: undefined,
+      firstDinnerDishId: undefined, secondDinnerDishId: undefined, singleDinnerDishId: undefined,
+    }
+    for (const day of (days ?? [])) {
+      await db.days.update(day.id, empty)
+    }
+    setConfirmClear(false)
+    showToast('Semana vaciada')
   }
 
   async function handleShare() {
@@ -82,7 +98,6 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
           style={{ color: 'var(--brand)' }}>
           <ChevronLeft size={22} />
         </button>
-
         <div className="flex-1 text-center">
           <p className="font-bold text-sm" style={{ color: 'var(--brand)' }}>{weekRangeLabel(weekStart)}</p>
           {isCurrentWeek(weekStart)
@@ -93,7 +108,6 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
               </button>
           }
         </div>
-
         <button onClick={() => setWeekStart(w => addWeeks(w, 1))}
           className="w-10 h-10 flex items-center justify-center rounded-full active:opacity-60 flex-shrink-0"
           style={{ color: 'var(--brand)' }}>
@@ -102,22 +116,46 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
       </div>
 
       {/* Action bar */}
-      <div className="px-4 py-2.5 bg-white border-b flex gap-2 flex-shrink-0"
-        style={{ borderColor: 'var(--cream-border)' }}>
-        <button onClick={handleAutoFill} disabled={filling}
-          className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:opacity-75 disabled:opacity-40"
-          style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
-          {filling
-            ? <span style={{ animation: 'pulse-soft 1.2s ease infinite' }}>Rellenando…</span>
-            : <><Zap size={14} /><span>Rellenar semana</span></>
-          }
-        </button>
-        <button onClick={handleShare}
-          className="py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center gap-1.5 active:opacity-75"
-          style={{ background: 'var(--cream)', color: 'var(--brand)', border: '1px solid var(--cream-border)' }}>
-          <Share size={14} /><span>Compartir</span>
-        </button>
-      </div>
+      {confirmClear ? (
+        <div className="px-4 py-2.5 bg-white border-b flex items-center justify-between gap-2 flex-shrink-0 anim-scale"
+          style={{ borderColor: 'var(--cream-border)', background: '#FEF3EE' }}>
+          <p className="text-sm font-medium" style={{ color: '#8B4513' }}>Vaciar todos los platos de la semana?</p>
+          <div className="flex gap-2">
+            <button onClick={handleClearWeek}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold text-white"
+              style={{ background: '#C0392B' }}>
+              Vaciar
+            </button>
+            <button onClick={() => setConfirmClear(false)}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ background: 'var(--cream)', color: 'var(--brand)' }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="px-4 py-2.5 bg-white border-b flex gap-2 flex-shrink-0"
+          style={{ borderColor: 'var(--cream-border)' }}>
+          <button onClick={handleAutoFill} disabled={filling}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:opacity-75 disabled:opacity-40"
+            style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
+            {filling
+              ? <span style={{ animation: 'pulse-soft 1.2s ease infinite' }}>Rellenando…</span>
+              : <><Zap size={14} /><span>Rellenar semana</span></>
+            }
+          </button>
+          <button onClick={handleShare}
+            className="py-2.5 px-3.5 rounded-xl flex items-center gap-1.5 text-sm font-semibold active:opacity-75"
+            style={{ background: 'var(--cream)', color: 'var(--brand)', border: '1px solid var(--cream-border)' }}>
+            <Share size={14} />
+          </button>
+          <button onClick={() => setConfirmClear(true)}
+            className="py-2.5 px-3.5 rounded-xl flex items-center gap-1.5 text-sm font-semibold active:opacity-75"
+            style={{ background: 'var(--cream)', color: '#C0392B', border: '1px solid var(--cream-border)' }}>
+            <Trash size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Day cards */}
       <div className="content-area px-4 py-3 space-y-2">
@@ -143,18 +181,15 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
           return (
             <button
               key={date}
-              onClick={() => onDayTap(date, weekStart)}
+              onClick={() => { haptic(); onDayTap(date, weekStart) }}
               className="list-item w-full text-left flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] transition-transform"
               style={{
                 '--i': idx,
                 background: 'white',
                 border: `1.5px solid ${conflict ? '#F5C0A4' : today ? 'var(--brand)' : 'var(--cream-border)'}`,
-                boxShadow: today
-                  ? '0 2px 10px rgba(47,29,27,0.14)'
-                  : '0 1px 3px rgba(47,29,27,0.06)',
+                boxShadow: today ? '0 2px 10px rgba(47,29,27,0.14)' : '0 1px 3px rgba(47,29,27,0.06)',
               } as React.CSSProperties}
             >
-              {/* Date badge */}
               <div className="flex-shrink-0 w-12 text-center rounded-xl py-1.5"
                 style={{ background: today ? 'var(--brand)' : 'var(--cream)' }}>
                 <p className="text-[9px] font-bold uppercase tracking-wider"
@@ -169,7 +204,6 @@ export default function WeeklyMenuView({ onDayTap }: Props) {
 
               <div className="w-px h-10 flex-shrink-0" style={{ background: 'var(--cream-border)' }} />
 
-              {/* Meal summary */}
               <div className="flex-1 min-w-0 space-y-1">
                 {day ? (
                   <>

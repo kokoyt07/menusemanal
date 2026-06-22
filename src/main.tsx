@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
+import { showToast } from './utils/toast'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -18,3 +19,10 @@ requestAnimationFrame(() => {
     setTimeout(() => loader.remove(), 320)
   })
 })
+
+// Show toast when a new service worker takes control (app updated)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    showToast('App actualizada', 'info')
+  })
+}

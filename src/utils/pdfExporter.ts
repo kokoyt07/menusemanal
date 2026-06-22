@@ -51,7 +51,7 @@ export async function exportAndSharePDF(
   let y = margin + 14
 
   // Table header
-  doc.setFillColor(59, 130, 246)
+  doc.setFillColor(47, 29, 27)
   doc.rect(margin, y, pageW - 2 * margin, headerH, 'F')
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(9)

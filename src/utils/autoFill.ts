@@ -12,6 +12,7 @@ function pickBest(
     .filter(d => !d.categoryIds.some(c => mealCats.has(c)))
     .map(d => {
       let score = Math.random() * 3
+      if (d.isFavorite) score += 10
       for (const c of d.categoryIds) score -= (weekCatCount.get(c) ?? 0) * 8
       if (weekDishIds.has(d.id)) score -= 20
       return { d, score }

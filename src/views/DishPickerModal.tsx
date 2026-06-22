@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import db from '../db'
-import type { DishSlot, Dish, CourseType } from '../types'
+import type { DishSlot, Dish } from '../types'
 import { SLOT_LABEL, SLOT_COURSE, COURSE_LABEL } from '../types'
 import { wouldConflict } from '../utils/validationUtils'
-import { Search, X, Check, AlertTriangle, Utensils } from '../components/Icon'
+import { Search, X, Check, AlertTriangle, Utensils, Plus, Heart } from '../components/Icon'
+import AddEditDishModal from './AddEditDishModal'
 
 interface Props {
   slot: DishSlot
@@ -16,9 +17,10 @@ interface Props {
 }
 
 export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSelect, onClear, onClose }: Props) {
-  const [search, setSearch]       = useState('')
-  const [showAll, setShowAll]     = useState(SLOT_COURSE[slot] === 'unico')
+  const [search, setSearch]           = useState('')
+  const [showAll, setShowAll]         = useState(SLOT_COURSE[slot] === 'unico')
   const [filterCatId, setFilterCatId] = useState<string | null>(null)
+  const [addingDish, setAddingDish]   = useState(false)
 
   const categories = useLiveQuery(() => db.categories.orderBy('sortOrder').toArray())
   const allDishes  = useLiveQuery(() => db.dishes.orderBy('name').toArray())
@@ -34,20 +36,28 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
       const ac = wouldConflict(a, usedCatIds)
       const bc = wouldConflict(b, usedCatIds)
       if (ac !== bc) return ac ? 1 : -1
+      if (a.isFavorite !== b.isFavorite) return a.isFavorite ? -1 : 1
       return a.name.localeCompare(b.name)
     })
 
   const currentDish = currentDishId ? (allDishes ?? []).find(d => d.id === currentDishId) : undefined
 
+  if (addingDish) {
+    return (
+      <AddEditDishModal
+        onClose={() => setAddingDish(false)}
+        presetCourse={SLOT_COURSE[slot]}
+      />
+    )
+  }
+
   return (
     <div className="sheet-overlay" onClick={onClose}>
       <div className="sheet-content" onClick={e => e.stopPropagation()}>
-        {/* Handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full" style={{ background: '#D9D2CA' }} />
         </div>
 
-        {/* Title row */}
         <div className="flex items-center justify-between px-4 py-2 flex-shrink-0">
           <h2 className="font-bold text-base" style={{ color: 'var(--brand)' }}>{SLOT_LABEL[slot]}</h2>
           <button onClick={onClose}
@@ -65,8 +75,7 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
             <input type="text" placeholder="Buscar plato…" value={search}
               onChange={e => setSearch(e.target.value)}
               className="flex-1 bg-transparent text-sm outline-none"
-              style={{ color: 'var(--brand)' }}
-              autoFocus />
+              style={{ color: 'var(--brand)' }} autoFocus />
             {search && (
               <button onClick={() => setSearch('')} className="active:opacity-60">
                 <X size={13} style={{ color: '#AFA59A' }} />
@@ -87,13 +96,11 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
           </div>
         </div>
 
-        {/* Show-all toggle for primero/segundo */}
+        {/* Show-all toggle */}
         {SLOT_COURSE[slot] !== 'unico' && (
           <div className="px-4 pb-3 flex-shrink-0">
             <label className="flex items-center gap-2.5 cursor-pointer">
-              <div
-                onClick={() => setShowAll(v => !v)}
-                className="relative flex-shrink-0 cursor-pointer"
+              <div onClick={() => setShowAll(v => !v)} className="relative cursor-pointer flex-shrink-0"
                 style={{ width: 36, height: 20 }}>
                 <div className="absolute inset-0 rounded-full transition-colors duration-150"
                   style={{ background: showAll ? 'var(--brand)' : '#D9D2CA' }} />
@@ -127,43 +134,60 @@ export default function DishPickerModal({ slot, currentDishId, usedCatIds, onSel
           )}
 
           {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
+            <div className="flex flex-col items-center justify-center py-10">
               <Utensils size={36} sw={1.25} style={{ color: '#D9D2CA', marginBottom: 10 }} />
-              <p className="text-sm" style={{ color: '#AFA59A' }}>Sin platos</p>
+              <p className="text-sm mb-3" style={{ color: '#AFA59A' }}>Sin platos</p>
+              <button onClick={() => setAddingDish(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold active:opacity-70"
+                style={{ background: 'var(--brand)', color: 'white' }}>
+                <Plus size={14} sw={2} /><span>Crear plato nuevo</span>
+              </button>
             </div>
           ) : (
-            <ul className="mx-4 rounded-2xl overflow-hidden"
-              style={{ border: '1px solid var(--cream-border)' }}>
-              {filtered.map((dish, idx) => {
-                const conflicts = wouldConflict(dish, usedCatIds)
-                const isCurrent = dish.id === currentDishId
-                return (
-                  <li key={dish.id}>
-                    <button onClick={() => onSelect(dish)}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-left active:opacity-75"
-                      style={{
-                        borderTop: idx > 0 ? '1px solid var(--cream-border)' : undefined,
-                        background: isCurrent ? 'var(--brand-soft)' : 'white',
-                      }}>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate"
-                          style={{ color: 'var(--brand)' }}>
-                          {dish.name}
-                        </p>
-                        <p className="text-xs mt-0.5" style={{ color: '#AFA59A' }}>
-                          {COURSE_LABEL[dish.course]}
-                          {dish.categoryIds.length > 0 && ` · ${dish.categoryIds.map(id =>
-                            (categories ?? []).find(c => c.id === id)?.name ?? ''
-                          ).filter(Boolean).join(', ')}`}
-                        </p>
-                      </div>
-                      {isCurrent && <Check size={16} style={{ color: 'var(--brand)', flexShrink: 0 }} />}
-                      {!isCurrent && conflicts && <AlertTriangle size={14} style={{ color: '#E07050', flexShrink: 0 }} />}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
+            <>
+              <ul className="mx-4 rounded-2xl overflow-hidden"
+                style={{ border: '1px solid var(--cream-border)' }}>
+                {filtered.map((dish, idx) => {
+                  const conflicts = wouldConflict(dish, usedCatIds)
+                  const isCurrent = dish.id === currentDishId
+                  return (
+                    <li key={dish.id}>
+                      <button onClick={() => onSelect(dish)}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left active:opacity-75"
+                        style={{
+                          borderTop: idx > 0 ? '1px solid var(--cream-border)' : undefined,
+                          background: isCurrent ? 'var(--brand-soft)' : 'white',
+                        }}>
+                        {dish.isFavorite && (
+                          <Heart size={12} style={{ color: '#C0392B', fill: '#C0392B', flexShrink: 0 }} />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate" style={{ color: 'var(--brand)' }}>
+                            {dish.name}
+                          </p>
+                          <p className="text-xs mt-0.5" style={{ color: '#AFA59A' }}>
+                            {COURSE_LABEL[dish.course]}
+                            {dish.categoryIds.length > 0 && ` · ${dish.categoryIds.map(id =>
+                              (categories ?? []).find(c => c.id === id)?.name ?? ''
+                            ).filter(Boolean).join(', ')}`}
+                          </p>
+                        </div>
+                        {isCurrent && <Check size={16} style={{ color: 'var(--brand)', flexShrink: 0 }} />}
+                        {!isCurrent && conflicts && <AlertTriangle size={14} style={{ color: '#E07050', flexShrink: 0 }} />}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+
+              {/* Create new dish button */}
+              <button onClick={() => setAddingDish(true)}
+                className="mx-4 mt-3 w-[calc(100%-2rem)] flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold active:opacity-70"
+                style={{ background: 'var(--cream)', color: 'var(--brand)',
+                         border: '1.5px dashed var(--cream-border)' }}>
+                <Plus size={14} /><span>Crear plato nuevo</span>
+              </button>
+            </>
           )}
           <div className="h-6" />
         </div>

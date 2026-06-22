@@ -197,6 +197,11 @@ export function HistoryDetailView({ menuId, onBack }: DetailProps) {
               {!day.hasLunch && !day.hasDinner && (
                 <p className="text-sm" style={{ color: '#C8C0B5' }}>Dia libre</p>
               )}
+              {day.notes && (
+                <p className="text-xs mt-2 pt-2 border-t" style={{ color: '#AFA59A', borderColor: 'var(--cream-border)' }}>
+                  {day.notes}
+                </p>
+              )}
             </div>
           )
         })}
