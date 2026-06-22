@@ -6,8 +6,10 @@ import { supabase } from './lib/supabase'
 import ToastContainer from './components/ToastContainer'
 import CookieBanner from './components/CookieBanner'
 import { Calendar, Utensils, ShoppingBag, Clock, Settings, UserCircle } from './components/Icon'
+import { useOnlineStatus } from './hooks/useOnlineStatus'
 import AuthScreen from './views/AuthScreen'
 import InstallPromptScreen from './views/InstallPromptScreen'
+import OfflinePage from './views/OfflinePage'
 import WelcomeScreen from './views/WelcomeScreen'
 import WeeklyMenuView from './views/WeeklyMenuView'
 import DayMenuView from './views/DayMenuView'
@@ -47,6 +49,7 @@ function isAppInstalled() {
 
 export default function App() {
   const { user, loading: authLoading } = useAuth()
+  const isOnline                       = useOnlineStatus()
   const [tab, setTab]             = useState<Tab>('menu')
   const [screen, setScreen]       = useState<Screen>({ type: 'welcome' })
   const [installSeen, setInstallSeen] = useState(isAppInstalled)
@@ -57,6 +60,16 @@ export default function App() {
         <div className="app-column flex items-center justify-center" style={{ background: 'var(--brand)' }}>
           <img src="/logo.png" alt="" className="w-16 h-16 opacity-70"
             style={{ filter: 'brightness(0) invert(1)', animation: 'pulse-soft 1.4s ease infinite' }} />
+        </div>
+      </div>
+    )
+  }
+
+  if (!isOnline) {
+    return (
+      <div className="h-full font-sans flex justify-center" style={{ background: 'var(--cream-border)' }}>
+        <div className="app-column">
+          <OfflinePage onRetry={() => window.location.reload()} />
         </div>
       </div>
     )
