@@ -63,18 +63,30 @@ export function useMenuHistory(userId: string) {
 
   async function deleteMenu(menuId: string): Promise<void> {
     setMenus(prev => prev?.filter(m => m.id !== menuId))
-    await supabase.from('weekly_menus').delete().eq('id', menuId)
+    const { error } = await supabase.from('weekly_menus').delete().eq('id', menuId)
+    if (error) {
+      console.error('[useMenuHistory] deleteMenu:', error)
+      showToast('Error al eliminar el menú', 'error')
+      fetchAll()
+    }
   }
 
   async function duplicateMenu(menu: MenuWithDays): Promise<void> {
     const nextStart = addWeeks(menu.weekStartDate, 1)
     if (menus?.some(m => m.weekStartDate === nextStart)) {
-      showToast('Ya existe un menu para esa semana', 'info')
+      showToast('Ya existe un menú para esa semana', 'info')
       return
     }
 
     const newMenuId = crypto.randomUUID()
-    await supabase.from('weekly_menus').insert({ id: newMenuId, user_id: userId, week_start_date: nextStart })
+    const { error: menuErr } = await supabase
+      .from('weekly_menus')
+      .insert({ id: newMenuId, user_id: userId, week_start_date: nextStart })
+    if (menuErr) {
+      console.error('[useMenuHistory] duplicateMenu:', menuErr)
+      showToast('Error al duplicar el menú', 'error')
+      return
+    }
 
     const newDayRows = menu.days.map(d => ({
       id: crypto.randomUUID(), menu_id: newMenuId, user_id: userId,

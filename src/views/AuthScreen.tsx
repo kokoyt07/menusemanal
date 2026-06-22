@@ -4,7 +4,7 @@ import { haptic } from '../utils/haptic'
 import PrivacyPolicySheet from './PrivacyPolicySheet'
 
 export default function AuthScreen() {
-  const [mode, setMode]             = useState<'login' | 'register'>('login')
+  const [mode, setMode]             = useState<'login' | 'register' | 'forgot'>('login')
   const [email, setEmail]           = useState('')
   const [password, setPassword]     = useState('')
   const [confirm, setConfirm]       = useState('')
@@ -17,11 +17,25 @@ export default function AuthScreen() {
 
   const isLogin = mode === 'login'
 
-  function switchMode(m: 'login' | 'register') {
+  function switchMode(m: 'login' | 'register' | 'forgot') {
     setMode(m)
     setMessage(null)
     setConfirm('')
     setAccept(false)
+  }
+
+  async function handleForgotPassword() {
+    if (!email.trim()) { setMessage({ text: 'Introduce tu email para continuar.', ok: false }); return }
+    haptic()
+    setLoading(true)
+    setMessage(null)
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim())
+    setLoading(false)
+    if (error) {
+      setMessage({ text: 'No se pudo enviar el email. Comprueba la dirección.', ok: false })
+    } else {
+      setMessage({ text: '✓ Email enviado. Revisa tu bandeja de entrada para restablecer la contraseña.', ok: true })
+    }
   }
 
   function validate(): string | null {
@@ -80,6 +94,37 @@ export default function AuthScreen() {
     }
   }
 
+  const forgotContent = (
+    <>
+      <button onClick={() => switchMode('login')}
+        className="flex items-center gap-1.5 mb-5 text-sm font-semibold active:opacity-60"
+        style={{ color: '#AFA59A' }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Volver al inicio de sesión
+      </button>
+      <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--brand)' }}>Recuperar contraseña</h2>
+      <p className="text-sm mb-5" style={{ color: '#AFA59A' }}>
+        Te enviaremos un enlace para restablecer tu contraseña.
+      </p>
+      <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+        placeholder="Email" autoComplete="email"
+        className="w-full px-4 py-3.5 rounded-xl text-sm outline-none mb-4"
+        style={fieldStyle}
+        onKeyDown={e => e.key === 'Enter' && handleForgotPassword()} />
+      {message && (
+        <div className="mb-4 p-3 rounded-xl text-sm font-medium anim-scale"
+          style={{ background: message.ok ? '#E8F5E9' : '#FEF3EE', color: message.ok ? '#2E7D32' : '#8B4513' }}>
+          {message.text}
+        </div>
+      )}
+      <button onClick={handleForgotPassword} disabled={loading}
+        className="w-full py-4 rounded-xl text-base font-bold active:opacity-75 disabled:opacity-40"
+        style={{ background: 'var(--brand)', color: 'white' }}>
+        {loading ? 'Enviando…' : 'Enviar enlace'}
+      </button>
+    </>
+  )
+
   const formContent = (
     <>
       {/* Tabs */}
@@ -123,6 +168,13 @@ export default function AuthScreen() {
           className="w-full px-4 py-3.5 rounded-xl text-sm outline-none"
           style={fieldStyle}
           onKeyDown={e => e.key === 'Enter' && isLogin && handleLogin()} />
+        {isLogin && (
+          <button type="button" onClick={() => switchMode('forgot')}
+            className="w-full text-right text-xs font-semibold active:opacity-60 pt-0.5"
+            style={{ color: '#AFA59A' }}>
+            ¿Olvidaste tu contraseña?
+          </button>
+        )}
 
         {!isLogin && (
           <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
@@ -186,6 +238,8 @@ export default function AuthScreen() {
     </>
   )
 
+  const activeContent = mode === 'forgot' ? forgotContent : formContent
+
   return (
     <div className="screen-full" style={{ background: 'var(--brand)' }}>
 
@@ -202,7 +256,7 @@ export default function AuthScreen() {
         {/* Form — slides up from bottom */}
         <div className="rounded-t-3xl px-6 pt-7 overflow-y-auto"
           style={{ background: 'var(--surface)', paddingBottom: 'max(32px, env(safe-area-inset-bottom))' }}>
-          {formContent}
+          {activeContent}
         </div>
       </div>
 
@@ -224,7 +278,7 @@ export default function AuthScreen() {
 
           {/* Form */}
           <div className="px-8 py-7 overflow-y-auto" style={{ maxHeight: 'calc(90dvh - 200px)' }}>
-            {formContent}
+            {activeContent}
           </div>
         </div>
       </div>
